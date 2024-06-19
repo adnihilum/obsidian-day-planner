@@ -25,8 +25,8 @@ export function renderTaskMarkdown(
     onDestroy?.();
 
     const text = settings.showSubtasksInTaskBlocks
-      ? task.text
-      : task.text.split("\n")[0];
+      ? task.displayedText
+      : task.displayedText.split("\n")[0];
 
     onDestroy = renderMarkdown(el, text);
 

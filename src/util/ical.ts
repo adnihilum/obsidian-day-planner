@@ -83,7 +83,7 @@ function icalEventToTask(
   const base = {
     calendar: icalEvent.calendar,
     id: getId(),
-    text: icalEvent.summary,
+    displayedText: icalEvent.summary,
     firstLineText: icalEvent.summary,
     startTime: startTimeAdjusted,
     readonly: true,

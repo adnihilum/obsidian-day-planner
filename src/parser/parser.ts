@@ -2,7 +2,12 @@ import type { Moment } from "moment";
 import type { CachedMetadata } from "obsidian";
 import { dedent } from "ts-dedent";
 
-import { timestampRegExp } from "../regexp";
+import {
+  keylessScheduledPropRegExp,
+  scheduledPropRegExp,
+  shortScheduledPropRegExp,
+  timestampRegExp,
+} from "../regexp";
 import type { TaskLocation } from "../types";
 import { getId } from "../util/id";
 
@@ -81,7 +86,7 @@ export function createTask({
 }
 
 function getDisplayedText(
-  { groups: { text, listTokens, completion } }: RegExpExecArray,
+  { groups: { text, completion } }: RegExpExecArray,
   completeContent: string,
 ) {
   const isTask = completion?.length > 0;
@@ -90,19 +95,20 @@ function getDisplayedText(
   const indexAfterFirstNewline = indexOfFirstNewline + 1;
   const linesAfterFirst = completeContent.substring(indexAfterFirstNewline);
 
+  const cleanText = text
+    .replace(shortScheduledPropRegExp, "")
+    .replace(scheduledPropRegExp, "")
+    .replace(keylessScheduledPropRegExp, "")
+    .trim();
+
   if (indexOfFirstNewline < 0) {
+    return cleanText;
+  } else {
     if (isTask) {
-      return `${listTokens}${text}`;
+      return `${cleanText}\n${linesAfterFirst}`;
+    } else {
+      const formattedLinesAfterFirst = dedent(linesAfterFirst).trimStart();
+      return `${cleanText}\n${formattedLinesAfterFirst}`;
     }
-
-    return text;
   }
-
-  if (isTask) {
-    return `${listTokens}${text}\n${linesAfterFirst}`;
-  }
-
-  const formattedLinesAfterFirst = dedent(linesAfterFirst).trimStart();
-
-  return `${text}\n${formattedLinesAfterFirst}`;
 }

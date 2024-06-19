@@ -10,7 +10,7 @@ import {
 } from "../constants";
 import { createTask } from "../parser/parser";
 import { timeFromStartRegExp } from "../regexp";
-import { Task } from "../types";
+import { PlacedTask, Task, UnscheduledTask } from "../types";
 
 import { ClockMoments, toTime } from "./clock";
 import { getId } from "./id";
@@ -47,13 +47,13 @@ export function toString(node: Node, indentation = "") {
   return result;
 }
 
-export function toUnscheduledTask(sTask: STask, day: Moment) {
+export function toUnscheduledTask(sTask: STask, day: Moment): UnscheduledTask {
   return {
     durationMinutes: defaultDurationMinutes,
     // todo: bad abstraction
     listTokens: getListTokens(sTask),
     firstLineText: sTask.text,
-    text: toString(sTask),
+    displayedText: toString(sTask),
     location: {
       path: sTask.path,
       line: sTask.line,
@@ -79,11 +79,11 @@ export function toTask(sTask: STask, day: Moment): Task {
     ? getDiffInMinutes(endTime, startTime)
     : undefined;
 
-  return {
+  const task: Task = {
     startTime,
     listTokens: getListTokens(sTask),
     firstLineText,
-    text,
+    displayedText: text,
     durationMinutes,
     startMinutes: getMinutesSinceMidnight(startTime),
     location: {
@@ -93,6 +93,8 @@ export function toTask(sTask: STask, day: Moment): Task {
     },
     id: getId(),
   };
+
+  return task;
 }
 
 export function getScheduledDay(sTask: STask) {
@@ -106,13 +108,16 @@ export function getScheduledDay(sTask: STask) {
   return scheduledPropDay || dailyNoteDay;
 }
 
-export function toClockRecord(sTask: STask, clockMoments: ClockMoments) {
+export function toClockRecord(
+  sTask: STask,
+  clockMoments: ClockMoments,
+): PlacedTask {
   // TODO: remove duplication
   return {
     ...toTime(clockMoments),
     startTime: clockMoments[0],
     firstLineText: textToString(sTask),
-    text: toString(sTask),
+    displayedText: toString(sTask),
     listTokens: "",
     location: {
       path: sTask.path,

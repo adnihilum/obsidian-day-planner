@@ -32,7 +32,7 @@ export interface UnscheduledTask {
 
   // TODO: the distinction needs to be clearer
   firstLineText: string;
-  text: string;
+  displayedText: string;
 
   id: string;
   location?: TaskLocation;

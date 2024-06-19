@@ -14,7 +14,7 @@
         {task.calendar.name}
       </span>
       <span class="summary">
-        {task.text}
+        {task.displayedText}
       </span>
     </div>
   </div>

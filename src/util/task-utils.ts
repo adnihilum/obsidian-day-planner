@@ -38,7 +38,7 @@ export function getEndTime(task: {
 }
 
 export function getRenderKey(task: PlacedTask) {
-  return `${task.startMinutes} ${getEndMinutes(task)} ${task.text} ${
+  return `${task.startMinutes} ${getEndMinutes(task)} ${task.displayedText} ${
     task.isGhost ?? ""
   }`;
 }
@@ -46,7 +46,7 @@ export function getRenderKey(task: PlacedTask) {
 export function getNotificationKey(task: PlacedTask) {
   return `${task.location?.path ?? "blank"}::${task.startMinutes}::${
     task.durationMinutes
-  }::${task.text}`;
+  }::${task.displayedText}`;
 }
 
 export function copy(task: Task): Task {
@@ -122,7 +122,7 @@ export function createTask(day: Moment, startMinutes: number): PlacedTask {
     startMinutes,
     durationMinutes: defaultDurationMinutes,
     firstLineText: "New item",
-    text: "New item",
+    displayedText: "New item",
     startTime: minutesToMomentOfDay(startMinutes, day),
     listTokens: "- [ ] ",
     placing: {

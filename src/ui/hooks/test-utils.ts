@@ -7,7 +7,7 @@ export const baseTask: PlacedTask = {
   startTime: moment("2023-01-01"),
   startMinutes: 0,
   durationMinutes: 60,
-  text: "",
+  displayedText: "",
   firstLineText: "",
   placing: {
     xOffsetPercent: 0,
