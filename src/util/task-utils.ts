@@ -88,11 +88,7 @@ export function updateScheduledPropInText(text: string, dayKey: string) {
     .replace(scheduledPropRegExp, `$1${dayKey}$2`)
     .replace(keylessScheduledPropRegExp, `$1${dayKey}$2`);
 
-  if (updated !== text) {
-    return updated;
-  }
-
-  return `${text} ⏳ ${dayKey}`;
+  return updated;
 }
 
 export function updateTaskText(task: Task) {
