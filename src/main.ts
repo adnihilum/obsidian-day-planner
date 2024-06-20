@@ -11,7 +11,6 @@ import { settings } from "./global-store/settings";
 import { DataviewFacade } from "./service/dataview-facade";
 import { ObsidianFacade } from "./service/obsidian-facade";
 import { PlanEditor } from "./service/plan-editor";
-import { STaskEditor } from "./service/stask-editor";
 import { DayPlannerSettings, defaultSettings } from "./settings";
 import { ObsidianContext } from "./types";
 import StatusBarWidget from "./ui/components/status-bar-widget.svelte";
@@ -33,7 +32,6 @@ export default class DayPlanner extends Plugin {
   private obsidianFacade!: ObsidianFacade;
   private planEditor!: PlanEditor;
   private dataviewFacade!: DataviewFacade;
-  private sTaskEditor!: STaskEditor;
 
   async onload() {
     await this.initSettingsStore();
@@ -41,10 +39,6 @@ export default class DayPlanner extends Plugin {
     this.obsidianFacade = new ObsidianFacade(this.app);
     this.dataviewFacade = new DataviewFacade(this.app);
     this.planEditor = new PlanEditor(this.settings, this.obsidianFacade);
-    this.sTaskEditor = new STaskEditor(
-      this.obsidianFacade,
-      this.dataviewFacade,
-    );
 
     this.registerViews();
     this.registerCommands();

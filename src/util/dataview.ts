@@ -6,16 +6,13 @@ import {
   defaultDayFormat,
   defaultDayFormatForLuxon,
   defaultDurationMinutes,
-  indentBeforeTaskParagraph,
 } from "../constants";
 import { createTask } from "../parser/parser";
 import { timeFromStartRegExp } from "../regexp";
-import { PlacedTask, Task, UnscheduledTask } from "../types";
+import { Task, UnscheduledTask } from "../types";
 
-import { ClockMoments, toTime } from "./clock";
 import { getId } from "./id";
 import { getDiffInMinutes, getMinutesSinceMidnight } from "./moment";
-import { deleteProps } from "./properties";
 
 export function unwrap<T>(group: ReturnType<DataArray<T>["groupBy"]>) {
   return group.map(({ key, rows }) => [key, rows.array()]).array();
@@ -31,7 +28,7 @@ interface Node {
 
 export function textToString(node: Node) {
   const status = node.status ? `[${node.status}] ` : "";
-  return `${node.symbol} ${status}${deleteProps(node.text)}\n`;
+  return `${node.symbol} ${status}${node.text}\n`;
 }
 
 // todo: remove duplication: toMarkdown
@@ -106,43 +103,6 @@ export function getScheduledDay(sTask: STask) {
   );
 
   return scheduledPropDay || dailyNoteDay;
-}
-
-export function toClockRecord(
-  sTask: STask,
-  clockMoments: ClockMoments,
-): PlacedTask {
-  // TODO: remove duplication
-  return {
-    ...toTime(clockMoments),
-    startTime: clockMoments[0],
-    firstLineText: textToString(sTask),
-    displayedText: toString(sTask),
-    listTokens: "",
-    location: {
-      path: sTask.path,
-      line: sTask.line,
-      position: sTask.position,
-    },
-    id: getId(),
-  };
-}
-
-export function toMarkdown(sTask: STask) {
-  const baseIndent = "\t".repeat(sTask.position.start.col);
-  const extraIndent = " ".repeat(indentBeforeTaskParagraph);
-
-  return sTask.text
-    .split("\n")
-    .map((line, i) => {
-      if (i === 0) {
-        // TODO: remove duplication
-        return `${baseIndent}${getListTokens(sTask)}${line}`;
-      }
-
-      return `${baseIndent}${extraIndent}${line}`;
-    })
-    .join("\n");
 }
 
 function getListTokens(sTask: STask) {

@@ -107,7 +107,7 @@ export class PlanEditor {
 
     const newTaskText = [
       task.firstLineText,
-      ...task.displayedText.split("\n").slice(1),
+      ...task.displayedText.split("\n").slice(1), //TODO: displayed text shouldn't be used here
     ].join("\n");
 
     result.splice(planEndLine + 1, 0, newTaskText);
@@ -117,7 +117,7 @@ export class PlanEditor {
 
   removeTaskFromFileContents(task: Task, contents: string) {
     const newContents = contents.split("\n");
-    const taskLinesCount = task.displayedText.split("\n").length - 1;
+    const taskLinesCount = task.displayedText.split("\n").length - 1; //TODO: displayed text shouldn't be used here
     newContents.splice(task.location.position.start.line, taskLinesCount);
 
     return newContents.join("\n");
