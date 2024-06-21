@@ -24,5 +24,5 @@ export function snap(
   { zoomLevel, snapStepMinutes }: DayPlannerSettings,
 ) {
   const minHeight = snapStepMinutes * zoomLevel;
-  return Math.max(Math.round(coords / minHeight) * minHeight, minHeight);
+  return Math.round(coords / minHeight) * minHeight;
 }
