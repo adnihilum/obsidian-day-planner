@@ -51,7 +51,9 @@ export function createEditHandlers({
     if (get(editOperation)) {
       return;
     }
+  }
 
+  async function handleTaskDblClick(task: UnscheduledTask) {
     const { path, line } = task.location;
     await obsidianFacade.revealLineInFile(path, line);
   }
@@ -101,6 +103,7 @@ export function createEditHandlers({
     handleContainerMouseDown,
     handleResizerMouseDown,
     handleTaskMouseUp,
+    handleTaskDblClick,
     handleUnscheduledTaskGripMouseDown,
   };
 }

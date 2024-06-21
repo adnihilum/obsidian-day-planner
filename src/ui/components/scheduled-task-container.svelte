@@ -21,6 +21,7 @@
     pointerOffsetY.set(snap(borderTopToPointerOffsetY, $settings));
   }}
   on:mouseup|stopPropagation
+  on:dblclick
 >
   <slot />
 </div>

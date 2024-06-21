@@ -16,6 +16,7 @@
     class="content"
     on:mousedown={(event) => event.stopPropagation()}
     on:mouseup
+    on:dblclick
   >
     <slot />
   </div>

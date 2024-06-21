@@ -18,6 +18,7 @@
     displayedTasks,
     cursor,
     handleTaskMouseUp,
+    handleTaskDblClick,
     handleUnscheduledTaskGripMouseDown,
   } = getEditHandlers(day));
 </script>
@@ -30,6 +31,7 @@
         onGripMouseDown={() => handleUnscheduledTaskGripMouseDown(task)}
         {task}
         on:mouseup={() => handleTaskMouseUp(task)}
+        on:dblclick={() => handleTaskDblClick(task)}
       />
     {/each}
   </div>

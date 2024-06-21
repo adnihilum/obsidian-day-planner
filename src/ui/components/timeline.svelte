@@ -33,6 +33,7 @@
     handleContainerMouseDown,
     handleResizerMouseDown,
     handleTaskMouseUp,
+    handleTaskDblClick,
     handleGripMouseDown,
     handleMouseEnter,
     pointerOffsetY,
@@ -66,6 +67,7 @@
           onResizerMouseDown={() => handleResizerMouseDown(task)}
           {task}
           on:mouseup={() => handleTaskMouseUp(task)}
+          on:dblclick={() => handleTaskDblClick(task)}
         />
       {/if}
     {/each}

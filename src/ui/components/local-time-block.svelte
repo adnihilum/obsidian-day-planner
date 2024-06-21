@@ -14,7 +14,7 @@
   export let onResizerMouseDown: (event: MouseEvent) => void;
 </script>
 
-<ScheduledTimeBlock {task} on:mouseup>
+<ScheduledTimeBlock {task} on:mouseup on:dblclick>
   <MarkdownBlockContent {task}>
     <RenderedMarkdown {task} />
     <Grip cursor={gripCursor} on:mousedown={onGripMouseDown} />

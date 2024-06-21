@@ -35,6 +35,7 @@
   --time-block-width={width}
   {task}
   on:mouseup
+  on:dblclick
 >
   <slot/>
 </TimeBlockBase>
