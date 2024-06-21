@@ -73,11 +73,16 @@ export function createTask({
   } = match;
 
   const startTime = parseTimestamp(start, day);
+  const endTime = parseTimestamp(end, day);
+  const endTimeAdjusted =
+    endTime.hour() === 0 && endTime.minute() === 0
+      ? endTime.add(1, "day")
+      : endTime;
 
   return {
     listTokens,
     startTime,
-    endTime: parseTimestamp(end, day),
+    endTime: endTimeAdjusted,
     text: getDisplayedText(match, completeContent),
     firstLineText: text.trim(),
     location,
