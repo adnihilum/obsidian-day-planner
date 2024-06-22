@@ -1,18 +1,18 @@
 <script lang="ts">
-  import { GripVertical } from "lucide-svelte";
+  import { Scissors } from "lucide-svelte";
 
   export let cursor: string;
 </script>
 
 <div style:cursor class="clickable-icon" on:mousedown|stopPropagation>
-  <GripVertical class="svg-icon" />
+  <Scissors class="svg-icon" />
 </div>
 
 <style>
   .clickable-icon {
     position: absolute;
     z-index: 10;
-    right: 0;
+    left: 0;
 
     grid-column: 2;
     align-self: flex-start;

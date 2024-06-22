@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Task } from "../../types";
+  import Copy from "./copy.svelte";
 
   import Grip from "./grip.svelte";
   import MarkdownBlockContent from "./markdown-block-content.svelte";
@@ -9,6 +10,7 @@
 
   export let task: Task;
   export let gripCursor: string;
+  export let onCopyMouseDown: (event: MouseEvent) => void;
   export let onGripMouseDown: (event: MouseEvent) => void;
   export let isResizeHandleVisible: boolean;
   export let onResizerMouseDown: (event: MouseEvent) => void;
@@ -17,6 +19,7 @@
 <ScheduledTimeBlock {task} on:mouseup on:dblclick>
   <MarkdownBlockContent {task}>
     <RenderedMarkdown {task} />
+    <Copy cursor={gripCursor} on:mousedown={onCopyMouseDown} />
     <Grip cursor={gripCursor} on:mousedown={onGripMouseDown} />
     <ResizeHandle
       visible={isResizeHandleVisible}

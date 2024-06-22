@@ -35,6 +35,7 @@
     handleTaskMouseUp,
     handleTaskDblClick,
     handleGripMouseDown,
+    handleCopyMouseDown,
     handleMouseEnter,
     pointerOffsetY,
     cursor,
@@ -64,6 +65,7 @@
           gripCursor={$cursor.gripCursor}
           isResizeHandleVisible={!$editOperation}
           onGripMouseDown={() => handleGripMouseDown(task)}
+          onCopyMouseDown={() => handleCopyMouseDown(task)}
           onResizerMouseDown={() => handleResizerMouseDown(task)}
           {task}
           on:mouseup={() => handleTaskMouseUp(task)}
