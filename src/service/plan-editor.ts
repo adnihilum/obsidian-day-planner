@@ -1,6 +1,6 @@
 import { groupBy } from "lodash/fp";
 import type { CachedMetadata } from "obsidian";
-import { getAllDailyNotes, getDailyNote } from "obsidian-daily-notes-interface";
+import { getDateFromPath } from "obsidian-daily-notes-interface";
 
 import { getHeadingByText, getListItemsUnderHeading } from "../parser/parser";
 import type { DayPlannerSettings } from "../settings";
@@ -16,47 +16,54 @@ export class PlanEditor {
     private readonly obsidianFacade: ObsidianFacade,
   ) {}
 
-  async ensureFilesForTasks(tasks: Task[]) {
+  async ensureFilesForTasks(tasks: { dayKey: string; task: PlacedTask }[]) {
     return Promise.all(
-      tasks.map(async (task) => {
+      tasks.map(async ({ dayKey, task }) => {
+        const { path } = await createDailyNoteIfNeeded(window.moment(dayKey));
+        await createDailyNoteIfNeeded(task.startTime);
+
         if (task.location?.path) {
           return task;
+        } else {
+          return { ...task, location: { path } };
         }
-
-        const { path } = await createDailyNoteIfNeeded(task.startTime);
-        return { ...task, location: { path } };
       }),
     );
   }
 
   // todo: all except this can be re-written to use mdast
   syncTasksWithFile = async ({
+    //TODO: what if we always look at task.startTime and task.location to get file? and to determine wheter the task is in daily notes or other file
     updated,
     created,
     moved,
   }: {
     updated: Task[];
-    created: Task[];
+    created: { dayKey: string; task: PlacedTask }[];
     moved: { dayKey: string; task: PlacedTask }[];
   }) => {
     if (created.length > 0) {
       const [task] = await this.ensureFilesForTasks(created);
 
-      return this.obsidianFacade.editFile(task.location.path, (contents) => {
+      const noteForFile = await createDailyNoteIfNeeded(
+        window.moment(created[0].dayKey),
+      );
+
+      const filePathToEdit = getDateFromPath(task.location?.path, "day")
+        ? noteForFile.path
+        : task.location?.path;
+
+      return this.obsidianFacade.editFile(filePathToEdit, (contents) => {
         // @ts-ignore
-        return this.writeTaskToFileContents(task, contents, task.location.path);
+        return this.writeTaskToFileContents(task, contents, filePathToEdit);
       });
     }
 
     if (moved.length > 0) {
-      // todo: dayKey is the new date, make files for those
-      const [task] = await this.ensureFilesForTasks(
-        moved.map(({ task }) => task),
-      );
+      const [task] = await this.ensureFilesForTasks(moved);
 
-      const noteForFile = getDailyNote(
+      const noteForFile = await createDailyNoteIfNeeded(
         window.moment(moved[0].dayKey),
-        getAllDailyNotes(),
       );
 
       const updated = updateTaskText(task as Task);
@@ -106,7 +113,7 @@ export class PlanEditor {
     const result = [...splitContents];
 
     const newTaskText = [
-      task.firstLineText,
+      task.firstLineText, //TODO: text already is updated here, isn't it?
       ...task.displayedText.split("\n").slice(1), //TODO: displayed text shouldn't be used here
     ].join("\n");
 

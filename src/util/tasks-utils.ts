@@ -5,14 +5,7 @@ import {
   getDateFromPath,
 } from "obsidian-daily-notes-interface";
 
-import {
-  Diff,
-  PlacedTask,
-  Task,
-  Tasks,
-  TasksForDay,
-  UnscheduledTask,
-} from "../types";
+import { Diff, PlacedTask, Task, Tasks, TasksForDay } from "../types";
 
 import {
   isEqualTask,
@@ -28,10 +21,9 @@ export function getTasksWithTime(tasks: Tasks) {
   return Object.values(tasks).flatMap(({ withTime }) => withTime);
 }
 
-export function getFlatTasks(tasks: Tasks) {
-  return Object.values(tasks).flatMap(({ withTime, noTime }) => [
-    ...withTime,
-    ...noTime,
+export function getFlatTasksWithKeys(tasks: Tasks) {
+  return Object.entries(tasks).flatMap(([dayKey, { withTime }]) => [
+    ...withTime.map((x) => ({ dayKey, task: x })),
   ]);
 }
 
@@ -59,6 +51,7 @@ export function getDayKey(day: Moment) {
   return day.format(DEFAULT_DAILY_NOTE_FORMAT);
 }
 
+//moves task between columns and changes its source text
 export function moveTaskToDay(baseline: Tasks, task: Task, day: Moment) {
   const sourceKey = getDayKey(task.startTime);
   const destKey = getDayKey(day);
@@ -126,8 +119,11 @@ function getPristine(flatBaseline: PlacedTask[], flatNext: PlacedTask[]) {
   );
 }
 
-function getCreatedTasks(base: UnscheduledTask[], next: UnscheduledTask[]) {
-  return differenceBy((task) => task.id, next, base);
+function getCreatedTasks(
+  base: { dayKey: string; task: Task }[],
+  next: { dayKey: string; task: Task }[],
+) {
+  return differenceBy((x) => x.task.id, next, base);
 }
 
 function getTasksWithUpdatedTime(base: PlacedTask[], next: PlacedTask[]) {
@@ -144,14 +140,20 @@ export function getDiff(base: Tasks, next: Tasks) {
     ),
     updatedDay: getTasksWithUpdatedDay(next),
     moved: getTasksInDailyNotesWithUpdatedDay(next),
-    created: getCreatedTasks(getFlatTasks(base), getFlatTasks(next)),
+    created: getCreatedTasks(
+      getFlatTasksWithKeys(base),
+      getFlatTasksWithKeys(next),
+    ),
   };
 }
 
 // todo: this syncs task state with text, it should be derived
 export function updateText(diff: Diff) {
   return {
-    created: diff.created.map(updateTaskText),
+    created: diff.created.map((x) => ({
+      ...x,
+      task: updateTaskText(updateTaskScheduledDay(x.task, x.dayKey)),
+    })),
     updated: [
       ...diff.updatedTime.map(updateTaskText),
       ...diff.updatedDay.map(({ dayKey, task }) =>
