@@ -90,6 +90,14 @@ export function createTask({
   };
 }
 
+export function cleanTaskText(rawText: string): string {
+  return rawText
+    .replace(shortScheduledPropRegExp, "")
+    .replace(scheduledPropRegExp, "")
+    .replace(keylessScheduledPropRegExp, "")
+    .trim();
+}
+
 function getDisplayedText(
   { groups: { text, completion } }: RegExpExecArray,
   completeContent: string,
@@ -100,11 +108,7 @@ function getDisplayedText(
   const indexAfterFirstNewline = indexOfFirstNewline + 1;
   const linesAfterFirst = completeContent.substring(indexAfterFirstNewline);
 
-  const cleanText = text
-    .replace(shortScheduledPropRegExp, "")
-    .replace(scheduledPropRegExp, "")
-    .replace(keylessScheduledPropRegExp, "")
-    .trim();
+  const cleanText = cleanTaskText(text);
 
   if (indexOfFirstNewline < 0) {
     return cleanText;

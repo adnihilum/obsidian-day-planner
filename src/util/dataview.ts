@@ -7,7 +7,7 @@ import {
   defaultDayFormatForLuxon,
   defaultDurationMinutes,
 } from "../constants";
-import { createTask } from "../parser/parser";
+import { cleanTaskText, createTask } from "../parser/parser";
 import { timeFromStartRegExp } from "../regexp";
 import { Task, UnscheduledTask } from "../types";
 
@@ -50,7 +50,7 @@ export function toUnscheduledTask(sTask: STask, day: Moment): UnscheduledTask {
     // todo: bad abstraction
     listTokens: getListTokens(sTask),
     firstLineText: sTask.text,
-    displayedText: toString(sTask),
+    displayedText: cleanTaskText(sTask.text),
     location: {
       path: sTask.path,
       line: sTask.line,
