@@ -131,7 +131,7 @@ describe("moving tasks between containers", () => {
       });
 
     moveCursorTo("01:00");
-    todayControls.handleContainerMouseDown();
+    todayControls.handleContainerDblClick();
     nextDayControls.handleMouseEnter();
     moveCursorTo("02:00");
 

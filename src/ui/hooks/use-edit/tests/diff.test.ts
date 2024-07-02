@@ -37,7 +37,7 @@ describe("Finding diff before writing updates to files", () => {
       tasks: emptyTasks,
     });
 
-    todayControls.handleContainerMouseDown();
+    todayControls.handleContainerDblClick();
 
     await confirmEdit();
 

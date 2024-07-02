@@ -30,7 +30,7 @@
   $: ({
     displayedTasks,
     cancelEdit,
-    handleContainerMouseDown,
+    handleContainerDblClick,
     handleResizerMouseDown,
     handleTaskMouseUp,
     handleTaskDblClick,
@@ -53,7 +53,7 @@
 
   <ScheduledTaskContainer
     {pointerOffsetY}
-    on:mousedown={handleContainerMouseDown}
+    on:dblclick={handleContainerDblClick}
     on:mouseenter={handleMouseEnter}
     on:mouseup={confirmEdit}
   >

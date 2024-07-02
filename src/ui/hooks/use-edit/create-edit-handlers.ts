@@ -28,7 +28,7 @@ export function createEditHandlers({
   editOperation,
   settings,
 }: UseEditHandlersProps) {
-  function handleContainerMouseDown() {
+  function handleContainerDblClick() {
     const newTask = createTask(day, get(cursorMinutes));
 
     startEdit({
@@ -110,7 +110,7 @@ export function createEditHandlers({
     handleMouseEnter,
     handleGripMouseDown,
     handleCopyMouseDown,
-    handleContainerMouseDown,
+    handleContainerDblClick,
     handleResizerMouseDown,
     handleTaskMouseUp,
     handleTaskDblClick,
