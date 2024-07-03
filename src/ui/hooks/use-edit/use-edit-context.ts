@@ -41,6 +41,7 @@ export function useEditContext({
     baselineTasks,
     editOperation,
     cursorMinutes,
+    settings,
   });
 
   const { startEdit, confirmEdit, cancelEdit } = useEditActions({
@@ -55,6 +56,7 @@ export function useEditContext({
       day,
       obsidianFacade,
       startEdit,
+      confirmEdit,
       cursorMinutes,
       editOperation,
       settings,

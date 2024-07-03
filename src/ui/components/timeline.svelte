@@ -69,7 +69,7 @@
           onResizerMouseDown={() => handleResizerMouseDown(task)}
           {task}
           on:mouseup={() => handleTaskMouseUp(task)}
-          on:dblclick={() => handleTaskDblClick(task)}
+          on:dblclick={(e) => {handleTaskDblClick(task); e.stopPropagation();}}
         />
       {/if}
     {/each}

@@ -1,9 +1,6 @@
 <script lang="ts">
   import { Writable } from "svelte/store";
 
-  import { snap } from "../../global-store/derived-settings";
-  import { settings } from "../../global-store/settings";
-
   export let pointerOffsetY: Writable<number>;
 
   let el: HTMLDivElement;
@@ -18,7 +15,7 @@
     const viewportToElOffsetY = el.getBoundingClientRect().top;
     const borderTopToPointerOffsetY = event.clientY - viewportToElOffsetY;
 
-    pointerOffsetY.set(snap(borderTopToPointerOffsetY, $settings));
+    pointerOffsetY.set(borderTopToPointerOffsetY);
   }}
   on:mouseup|stopPropagation
   on:dblclick

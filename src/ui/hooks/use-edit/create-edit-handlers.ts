@@ -8,9 +8,11 @@ import { PlacedTask, UnscheduledTask } from "../../../types";
 import { copy, createTask } from "../../../util/task-utils";
 
 import { EditMode, EditOperation } from "./types";
+import { snapMinutes } from "../../../global-store/derived-settings";
 
 export interface UseEditHandlersProps {
   startEdit: (operation: EditOperation) => void;
+  confirmEdit: () => void;
   // todo: make dynamic, since it can change?
   day: Moment;
   obsidianFacade: ObsidianFacade;
@@ -24,18 +26,24 @@ export function createEditHandlers({
   day,
   obsidianFacade,
   startEdit,
+  confirmEdit,
   cursorMinutes,
   editOperation,
   settings,
 }: UseEditHandlersProps) {
   function handleContainerDblClick() {
-    const newTask = createTask(day, get(cursorMinutes));
+    const newTask = createTask(
+      day,
+      snapMinutes(get(cursorMinutes), get(settings)),
+    );
 
     startEdit({
       task: { ...newTask, isGhost: true },
       mode: EditMode.CREATE,
       day,
+      startCursorTimeDelta: 0,
     });
+    confirmEdit();
   }
 
   function handleResizerMouseDown(task: PlacedTask) {
@@ -44,7 +52,13 @@ export function createEditHandlers({
         ? EditMode.RESIZE_AND_SHIFT_OTHERS
         : EditMode.RESIZE;
 
-    startEdit({ task, mode, day });
+    startEdit({
+      task,
+      mode,
+      day,
+      startCursorTimeDelta:
+        get(cursorMinutes) - (task.startMinutes + task.durationMinutes),
+    });
   }
 
   async function handleTaskMouseUp(task: UnscheduledTask) {
@@ -65,9 +79,15 @@ export function createEditHandlers({
         task,
         mode: EditMode.DRAG_AND_SHIFT_OTHERS,
         day,
+        startCursorTimeDelta: get(cursorMinutes) - task.startMinutes,
       });
     } else {
-      startEdit({ task, mode: EditMode.DRAG, day });
+      startEdit({
+        task,
+        mode: EditMode.DRAG,
+        day,
+        startCursorTimeDelta: get(cursorMinutes) - task.startMinutes,
+      });
     }
   }
 
@@ -86,14 +106,19 @@ export function createEditHandlers({
   function handleUnscheduledTaskGripMouseDown(task: UnscheduledTask) {
     const withAddedTime = {
       ...task,
-      startMinutes: get(cursorMinutes),
+      startMinutes: snapMinutes(get(cursorMinutes), get(settings)),
       // todo: add a proper fix
       startTime: task.location
         ? getDateFromPath(task.location.path, "day") || window.moment()
         : window.moment(),
     };
 
-    startEdit({ task: withAddedTime, mode: EditMode.DRAG, day });
+    startEdit({
+      task: withAddedTime,
+      mode: EditMode.DRAG,
+      day,
+      startCursorTimeDelta: 0,
+    });
   }
 
   function handleMouseEnter() {

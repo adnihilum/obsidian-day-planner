@@ -11,6 +11,8 @@ import { drag } from "./drag";
 import { dragAndShiftOthers } from "./drag-and-shift-others";
 import { resize } from "./resize";
 import { resizeAndShiftOthers } from "./resize-and-shift-others";
+import { DayPlannerSettings } from "../../../../settings";
+import { snapMinutes } from "../../../../global-store/derived-settings";
 
 const transformers: Record<EditMode, typeof drag> = {
   [EditMode.DRAG]: drag,
@@ -43,6 +45,7 @@ export function transform(
   baseline: Tasks,
   cursorMinutes: number,
   operation: EditOperation,
+  settings: DayPlannerSettings,
 ) {
   const destDay = getDestDay(operation);
   const destKey = getDayKey(destDay);
@@ -66,7 +69,7 @@ export function transform(
   const transformed = transformFn(
     withTimeSorted,
     operation.task,
-    cursorMinutes,
+    snapMinutes(cursorMinutes - operation.startCursorTimeDelta, settings),
   );
   const merged = [...readonly, ...transformed];
 

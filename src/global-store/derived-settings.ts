@@ -19,10 +19,9 @@ export function timeToTimelineOffset(
   return minutes * settings.zoomLevel - getHiddenHoursSize(settings);
 }
 
-export function snap(
-  coords: number,
+export function snapMinutes(
+  minutes: number,
   { zoomLevel, snapStepMinutes }: DayPlannerSettings,
 ) {
-  const minHeight = snapStepMinutes * zoomLevel;
-  return Math.round(coords / minHeight) * minHeight;
+  return Math.round(minutes / snapStepMinutes) * snapStepMinutes;
 }
