@@ -185,17 +185,6 @@ export default class DayPlanner extends Plugin {
 
     const errorStore = writable<Error | undefined>();
 
-    // todo: move out
-    // todo: pass context with day
-    new StatusBarWidget({
-      target: this.addStatusBarItem(),
-      props: {
-        onClick: this.initTimelineLeaf,
-        tasksForToday,
-        errorStore,
-      },
-    });
-
     this.register(newlyStartedTasks.subscribe(notifyAboutStartedTasks));
     this.addCommand({
       id: "re-sync",
@@ -244,5 +233,17 @@ export default class DayPlanner extends Plugin {
       (leaf: WorkspaceLeaf) =>
         new WeeklyView(leaf, this.settings, componentContext, dateRanges),
     );
+
+    // todo: move out
+    // todo: pass context with day
+    new StatusBarWidget({
+      target: this.addStatusBarItem(),
+      props: {
+        onClick: this.initTimelineLeaf,
+        tasksForToday,
+        errorStore,
+      },
+      context: componentContext,
+    });
   }
 }

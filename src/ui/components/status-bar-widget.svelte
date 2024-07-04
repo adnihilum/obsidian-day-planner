@@ -4,6 +4,7 @@
   import { settings } from "../../global-store/settings";
   import { TasksForDay } from "../../types";
   import { useStatusBarWidget } from "../hooks/use-status-bar-widget";
+  import StatusbarTimeBlock from "./statusbar-time-block.svelte";
 
   export let onClick: () => Promise<void>;
   export let tasksForToday: Readable<TasksForDay>;
@@ -23,9 +24,8 @@
     <span class="status-bar-item-segment">All done</span>
   {:else}
     {#if showNow && current}
-      <span class="status-bar-item-segment"
-        >Now: {current.text} (-{current.timeLeft})</span
-      >
+      <StatusbarTimeBlock task={current.task} />
+      <span class="status-bar-item-segment">-{current.timeLeft}</span>
       {#if progressIndicator === "pie"}
         <div
           class="status-bar-item-segment progress-pie day-planner"
@@ -41,9 +41,10 @@
       {/if}
     {/if}
     {#if showNext && next}
-      <span class="status-bar-item-segment"
-        >Next: {next.text} (in {next.timeToNext})</span
-      >
+      <span class="status-bar-item-segment">
+        in {next.timeToNext}
+      </span>
+      <StatusbarTimeBlock task={next.task} />
     {/if}
   {/if}
 </div>

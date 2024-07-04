@@ -3,46 +3,28 @@
   import { useColorOverride } from "../hooks/use-color-override";
 
   export let task: UnscheduledTask;
+  export let textWrap: boolean = true;
 
   $: override = useColorOverride(task);
   // todo: hide in hook
   $: backgroundColor =
     $override || "var(--time-block-bg-color, var(--background-primary))";
+
+  $: whiteSpace = textWrap ? "normal" : "nowrap"; //TODO: move to a variable
 </script>
 
-<div class="padding">
-  <div
-    style:background-color={backgroundColor}
-    class="content"
-    on:mousedown={(event) => event.stopPropagation()}
-    on:mouseup
-    on:dblclick
-  >
-    <slot />
-  </div>
+<div
+  style:background-color={backgroundColor}
+  style:white-space={whiteSpace}
+  class="content"
+  on:mousedown={(event) => event.stopPropagation()}
+  on:mouseup
+  on:dblclick
+>
+  <slot />
 </div>
 
 <style>
-  .padding {
-    position: var(--time-block-position, static);
-    top: var(--time-block-top, 0);
-    left: var(--time-block-left, 0);
-
-    display: flex;
-
-    width: var(--time-block-width, 100%);
-    height: var(--time-block-height, auto);
-    padding: 0 1px 2px;
-
-    transition: 0.05s linear;
-  }
-
-  /* TODO: Move out */
-  .padding :global(svg.lock-icon) {
-    width: var(--icon-xs);
-    height: var(--icon-xs);
-  }
-
   .content {
     position: relative;
 
@@ -53,7 +35,6 @@
     font-size: var(--font-ui-small);
     text-align: left;
     overflow-wrap: anywhere;
-    white-space: normal;
 
     border: 1px solid var(--time-block-border-color, var(--color-base-50));
     border-radius: var(--radius-s);

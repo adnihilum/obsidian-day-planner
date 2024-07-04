@@ -1,10 +1,8 @@
 import { sortBy } from "lodash/fp";
 import { derived, Readable } from "svelte/store";
 
-import { statusBarTextLimit } from "../../constants";
 import { currentTime } from "../../global-store/current-time";
-import { TasksForDay } from "../../types";
-import { ellipsis } from "../../util/ellipsis";
+import { PlacedTask, TasksForDay } from "../../types";
 import { getDiffInMinutes } from "../../util/moment";
 import { getEndTime } from "../../util/task-utils";
 
@@ -14,12 +12,12 @@ interface UseStatusBarWidgetProps {
 
 interface Widget {
   current?: {
-    text: string;
+    task: PlacedTask;
     timeLeft: string;
     percentageComplete: string;
   };
   next?: {
-    text: string;
+    task: PlacedTask;
     timeToNext: string;
   };
 }
@@ -59,12 +57,11 @@ export function useStatusBarWidget({ tasksForToday }: UseStatusBarWidgetProps) {
           window.moment(),
         );
         const timeLeft = minutesToTimestamp(minutesLeft);
-        const text = ellipsis(currentItem.firstLineText, statusBarTextLimit);
 
         widget.current = {
           percentageComplete: percentageComplete.toFixed(0),
           timeLeft,
-          text,
+          task: currentItem,
         };
       }
 
@@ -74,11 +71,10 @@ export function useStatusBarWidget({ tasksForToday }: UseStatusBarWidgetProps) {
           nextItem.startTime,
         );
         const timeToNext = minutesToTimestamp(minutesToNext);
-        const text = ellipsis(nextItem.firstLineText, statusBarTextLimit);
 
         widget.next = {
           timeToNext,
-          text,
+          task: nextItem,
         };
       }
 
