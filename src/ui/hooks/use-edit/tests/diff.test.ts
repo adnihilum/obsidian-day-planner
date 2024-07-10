@@ -1,7 +1,12 @@
 import { toMinutes } from "../../../../util/moment";
 import { baseTask } from "../../test-utils";
 
-import { emptyTasks, nextDayKey, unscheduledTask } from "./util/fixtures";
+import {
+  emptyTasks,
+  nextDay,
+  nextDayKey,
+  unscheduledTask,
+} from "./util/fixtures";
 import { setUp } from "./util/setup";
 
 jest.mock("obsidian-daily-notes-interface", () => ({
@@ -13,10 +18,10 @@ jest.mock("obsidian-daily-notes-interface", () => ({
 
 describe("Finding diff before writing updates to files", () => {
   test("Finds tasks moved between days", async () => {
-    const { todayControls, nextDayControls, confirmEdit, props } = setUp();
+    const { editHandlers, confirmEdit, props } = setUp();
 
-    todayControls.handleGripMouseDown(baseTask);
-    nextDayControls.handleMouseEnter();
+    editHandlers.handleGripMouseDown(baseTask);
+    editHandlers.handleMouseEnter(nextDay);
 
     await confirmEdit();
 
@@ -33,11 +38,11 @@ describe("Finding diff before writing updates to files", () => {
   });
 
   test("Finds created tasks", async () => {
-    const { todayControls, confirmEdit, props } = setUp({
+    const { editHandlers, confirmEdit, props } = setUp({
       tasks: emptyTasks,
     });
 
-    todayControls.handleContainerDblClick();
+    editHandlers.handleContainerDblClick();
 
     await confirmEdit();
 
@@ -50,9 +55,9 @@ describe("Finding diff before writing updates to files", () => {
   });
 
   test("Finds tasks moved within one day", async () => {
-    const { todayControls, confirmEdit, props, moveCursorTo } = setUp();
+    const { editHandlers, confirmEdit, props, moveCursorTo } = setUp();
 
-    todayControls.handleGripMouseDown(baseTask);
+    editHandlers.handleGripMouseDown(baseTask);
     moveCursorTo("2:00");
 
     await confirmEdit();
@@ -70,11 +75,11 @@ describe("Finding diff before writing updates to files", () => {
   });
 
   test("Finds newly scheduled tasks", async () => {
-    const { todayControls, confirmEdit, props, moveCursorTo } = setUp({
+    const { editHandlers, confirmEdit, props, moveCursorTo } = setUp({
       tasks: unscheduledTask,
     });
 
-    todayControls.handleGripMouseDown(baseTask);
+    editHandlers.handleGripMouseDown(baseTask);
     moveCursorTo("2:00");
 
     await confirmEdit();

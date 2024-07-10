@@ -1,4 +1,3 @@
-import { Moment } from "moment/moment";
 import { getDateFromPath } from "obsidian-daily-notes-interface";
 import { get, Readable, Writable } from "svelte/store";
 
@@ -9,38 +8,35 @@ import { copy, createTask } from "../../../util/task-utils";
 
 import { EditMode, EditOperation } from "./types";
 import { snapMinutes } from "../../../global-store/derived-settings";
+import { TimeCursor } from "./use-time-cursor";
 
 export interface UseEditHandlersProps {
   startEdit: (operation: EditOperation) => void;
   confirmEdit: () => void;
-  // todo: make dynamic, since it can change?
-  day: Moment;
   obsidianFacade: ObsidianFacade;
-  cursorMinutes: Readable<number>;
   editOperation: Writable<EditOperation>;
   settings: Readable<DayPlannerSettings>;
+  timeCursor: Readable<TimeCursor>;
 }
 
 // todo: rename without `use`, there are no custom stores here
 export function createEditHandlers({
-  day,
   obsidianFacade,
   startEdit,
   confirmEdit,
-  cursorMinutes,
   editOperation,
   settings,
+  timeCursor,
 }: UseEditHandlersProps) {
   function handleContainerDblClick() {
     const newTask = createTask(
-      day,
-      snapMinutes(get(cursorMinutes), get(settings)),
+      get(timeCursor).day,
+      snapMinutes(get(timeCursor).minutes, get(settings)),
     );
 
     startEdit({
       task: { ...newTask, isGhost: true },
       mode: EditMode.CREATE,
-      day,
       startCursorTimeDelta: 0,
     });
     confirmEdit();
@@ -55,9 +51,8 @@ export function createEditHandlers({
     startEdit({
       task,
       mode,
-      day,
       startCursorTimeDelta:
-        get(cursorMinutes) - (task.startMinutes + task.durationMinutes),
+        get(timeCursor).minutes - (task.startMinutes + task.durationMinutes),
     });
   }
 
@@ -78,15 +73,13 @@ export function createEditHandlers({
       startEdit({
         task,
         mode: EditMode.DRAG_AND_SHIFT_OTHERS,
-        day,
-        startCursorTimeDelta: get(cursorMinutes) - task.startMinutes,
+        startCursorTimeDelta: get(timeCursor).minutes - task.startMinutes,
       });
     } else {
       startEdit({
         task,
         mode: EditMode.DRAG,
-        day,
-        startCursorTimeDelta: get(cursorMinutes) - task.startMinutes,
+        startCursorTimeDelta: get(timeCursor).minutes - task.startMinutes,
       });
     }
   }
@@ -106,7 +99,7 @@ export function createEditHandlers({
   function handleUnscheduledTaskGripMouseDown(task: UnscheduledTask) {
     const withAddedTime = {
       ...task,
-      startMinutes: snapMinutes(get(cursorMinutes), get(settings)),
+      startMinutes: snapMinutes(get(timeCursor).minutes, get(settings)),
       // todo: add a proper fix
       startTime: task.location
         ? getDateFromPath(task.location.path, "day") || window.moment()
@@ -116,23 +109,11 @@ export function createEditHandlers({
     startEdit({
       task: withAddedTime,
       mode: EditMode.DRAG,
-      day,
       startCursorTimeDelta: 0,
     });
   }
 
-  function handleMouseEnter() {
-    editOperation.update(
-      (previous) =>
-        previous && {
-          ...previous,
-          day,
-        },
-    );
-  }
-
   return {
-    handleMouseEnter,
     handleGripMouseDown,
     handleCopyMouseDown,
     handleContainerDblClick,

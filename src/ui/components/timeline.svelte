@@ -22,13 +22,11 @@
   export let isUnderCursor = false;
 
   const {
-    editContext: { confirmEdit, editOperation, getEditHandlers },
+    editContext: { confirmEdit, editOperation, editHandlers },
   } = getContext<ObsidianContext>(obsidianContext);
   const dateRange = getContext<Writable<Moment[]>>(dateRangeContextKey);
-
-  $: actualDay = day || $dateRange[0];
-  $: ({
-    displayedTasks,
+  const {
+    getDisplayedTasks,
     cancelEdit,
     handleContainerDblClick,
     handleResizerMouseDown,
@@ -39,7 +37,10 @@
     handleMouseEnter,
     pointerOffsetY,
     cursor,
-  } = getEditHandlers(actualDay));
+  } = editHandlers;
+
+  $: actualDay = day || $dateRange[0];
+  $: displayedTasks = getDisplayedTasks(actualDay);
 </script>
 
 <svelte:window on:blur={cancelEdit} />
@@ -54,7 +55,7 @@
   <ScheduledTaskContainer
     {pointerOffsetY}
     on:dblclick={handleContainerDblClick}
-    on:mouseenter={handleMouseEnter}
+    on:mouseenter={() => handleMouseEnter(actualDay)}
     on:mouseup={confirmEdit}
   >
     {#each $displayedTasks.withTime as task (getRenderKey(task))}
@@ -69,7 +70,10 @@
           onResizerMouseDown={() => handleResizerMouseDown(task)}
           {task}
           on:mouseup={() => handleTaskMouseUp(task)}
-          on:dblclick={(e) => {handleTaskDblClick(task); e.stopPropagation();}}
+          on:dblclick={(e) => {
+            handleTaskDblClick(task);
+            e.stopPropagation();
+          }}
         />
       {/if}
     {/each}

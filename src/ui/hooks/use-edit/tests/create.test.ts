@@ -7,12 +7,12 @@ import { setUp } from "./util/setup";
 
 describe("create", () => {
   test("when creating and dragging, task duration changes", () => {
-    const { todayControls, moveCursorTo, displayedTasks } = setUp({
+    const { editHandlers, moveCursorTo, displayedTasks } = setUp({
       tasks: emptyTasks,
     });
 
     moveCursorTo("01:00");
-    todayControls.handleContainerDblClick();
+    editHandlers.handleContainerDblClick();
     moveCursorTo("02:00");
 
     expect(get(displayedTasks)).toMatchObject({

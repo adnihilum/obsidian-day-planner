@@ -10,9 +10,9 @@ import { setUp } from "./util/setup";
 
 describe("drag", () => {
   test("when drag starts, target task reacts to cursor", () => {
-    const { todayControls, moveCursorTo, displayedTasks } = setUp();
+    const { editHandlers, moveCursorTo, displayedTasks } = setUp();
 
-    todayControls.handleGripMouseDown(baseTask);
+    editHandlers.handleGripMouseDown(baseTask);
     moveCursorTo("01:00");
 
     expect(get(displayedTasks)).toMatchObject({
@@ -41,12 +41,12 @@ describe("drag", () => {
         },
       };
 
-      const { todayControls, moveCursorTo, displayedTasks } = setUp({
+      const { editHandlers, moveCursorTo, displayedTasks } = setUp({
         tasks,
         settings: { ...defaultSettingsForTests, editMode: "push" },
       });
 
-      todayControls.handleGripMouseDown(middleTask);
+      editHandlers.handleGripMouseDown(middleTask);
       moveCursorTo("03:00");
 
       expect(get(displayedTasks)).toMatchObject({
@@ -78,12 +78,12 @@ describe("drag", () => {
         },
       };
 
-      const { todayControls, moveCursorTo, displayedTasks } = setUp({
+      const { editHandlers, moveCursorTo, displayedTasks } = setUp({
         tasks,
         settings: { ...defaultSettingsForTests, editMode: "push" },
       });
 
-      todayControls.handleGripMouseDown(middleTask);
+      editHandlers.handleGripMouseDown(middleTask);
       moveCursorTo("03:00");
       moveCursorTo("01:00");
 
@@ -109,11 +109,11 @@ describe("drag", () => {
         },
       };
 
-      const { todayControls, moveCursorTo, displayedTasks } = setUp({
+      const { editHandlers, moveCursorTo, displayedTasks } = setUp({
         tasks,
       });
 
-      todayControls.handleGripMouseDown(baseTask);
+      editHandlers.handleGripMouseDown(baseTask);
       moveCursorTo("21:00");
 
       expect(get(displayedTasks)).toMatchObject({

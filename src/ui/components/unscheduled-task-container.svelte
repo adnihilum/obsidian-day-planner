@@ -11,16 +11,17 @@
   export let day: Moment;
 
   const {
-    editContext: { getEditHandlers },
+    editContext: { editHandlers },
   } = getContext<ObsidianContext>(obsidianContext);
-
-  $: ({
-    displayedTasks,
+    const {
+    getDisplayedTasks,
     cursor,
     handleTaskMouseUp,
     handleTaskDblClick,
     handleUnscheduledTaskGripMouseDown,
-  } = getEditHandlers(day));
+  } = editHandlers;
+
+  $: displayedTasks = getDisplayedTasks(day);
 </script>
 
 {#if $displayedTasks.noTime.length > 0 && $settings.showUncheduledTasks}

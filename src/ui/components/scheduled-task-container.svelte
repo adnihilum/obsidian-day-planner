@@ -4,6 +4,12 @@
   export let pointerOffsetY: Writable<number>;
 
   let el: HTMLDivElement;
+
+  function updatePointerOffsetY(event: MouseEvent) {
+    const viewportToElOffsetY = el.getBoundingClientRect().top;
+    const borderTopToPointerOffsetY = event.clientY - viewportToElOffsetY;
+    pointerOffsetY.set(borderTopToPointerOffsetY);
+  }
 </script>
 
 <div
@@ -11,12 +17,7 @@
   class="tasks absolute-stretch-x"
   on:mousedown
   on:mouseenter
-  on:mousemove={(event) => {
-    const viewportToElOffsetY = el.getBoundingClientRect().top;
-    const borderTopToPointerOffsetY = event.clientY - viewportToElOffsetY;
-
-    pointerOffsetY.set(borderTopToPointerOffsetY);
-  }}
+  on:mousemove={updatePointerOffsetY}
   on:mouseup|stopPropagation
   on:dblclick
 >

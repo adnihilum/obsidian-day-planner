@@ -10,9 +10,9 @@ import { setUp } from "./util/setup";
 
 describe("resize", () => {
   test("resizing changes duration", () => {
-    const { todayControls, moveCursorTo, displayedTasks } = setUp();
+    const { editHandlers, moveCursorTo, displayedTasks } = setUp();
 
-    todayControls.handleResizerMouseDown(baseTask);
+    editHandlers.handleResizerMouseDown(baseTask);
     moveCursorTo("03:00");
 
     expect(get(displayedTasks)).toMatchObject({
@@ -41,12 +41,12 @@ describe("resize", () => {
         },
       };
 
-      const { todayControls, moveCursorTo, displayedTasks } = setUp({
+      const { editHandlers, moveCursorTo, displayedTasks } = setUp({
         tasks,
         settings: { ...defaultSettingsForTests, editMode: "push" },
       });
 
-      todayControls.handleResizerMouseDown(middleTask);
+      editHandlers.handleResizerMouseDown(middleTask);
       moveCursorTo("04:00");
 
       expect(get(displayedTasks)).toMatchObject({

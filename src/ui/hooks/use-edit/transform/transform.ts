@@ -6,20 +6,22 @@ import type { Task, Tasks } from "../../../../types";
 import { getDayKey, moveTaskToColumn } from "../../../../util/tasks-utils";
 import { EditMode, EditOperation } from "../types";
 
-import { create } from "./create";
-import { drag } from "./drag";
-import { dragAndShiftOthers } from "./drag-and-shift-others";
-import { resize } from "./resize";
-import { resizeAndShiftOthers } from "./resize-and-shift-others";
+import { Create } from "./create";
+import { Drag } from "./drag";
+import { DragAndShiftOthers } from "./drag-and-shift-others";
+import { Resize } from "./resize";
+import { ResizeAndShiftOthers } from "./resize-and-shift-others";
 import { DayPlannerSettings } from "../../../../settings";
 import { snapMinutes } from "../../../../global-store/derived-settings";
+import { Transformation } from "./transformation";
+import { TimeCursor, TimeCursorHistory } from "../use-time-cursor";
 
-const transformers: Record<EditMode, typeof drag> = {
-  [EditMode.DRAG]: drag,
-  [EditMode.DRAG_AND_SHIFT_OTHERS]: dragAndShiftOthers,
-  [EditMode.CREATE]: create,
-  [EditMode.RESIZE]: resize,
-  [EditMode.RESIZE_AND_SHIFT_OTHERS]: resizeAndShiftOthers,
+const transformers: Record<EditMode, Transformation> = {
+  [EditMode.DRAG]: new Drag(),
+  [EditMode.DRAG_AND_SHIFT_OTHERS]: new DragAndShiftOthers(),
+  [EditMode.CREATE]: new Create(),
+  [EditMode.RESIZE]: new Resize(),
+  [EditMode.RESIZE_AND_SHIFT_OTHERS]: new ResizeAndShiftOthers(),
 };
 
 const multidayModes: Partial<EditMode[]> = [
@@ -31,8 +33,8 @@ function isMultiday(mode: EditMode) {
   return multidayModes.includes(mode);
 }
 
-function getDestDay(operation: EditOperation) {
-  return isMultiday(operation.mode) ? operation.day : operation.task.startTime;
+function getDestDay(operation: EditOperation, timeCursor: TimeCursor) {
+  return isMultiday(operation.mode) ? timeCursor.day : operation.task.startTime;
 }
 
 function sortByStartMinutes(tasks: Task[]) {
@@ -43,41 +45,70 @@ function sortByStartMinutes(tasks: Task[]) {
 
 export function transform(
   baseline: Tasks,
-  cursorMinutes: number,
+  timeCursorHistory: TimeCursorHistory,
   operation: EditOperation,
   settings: DayPlannerSettings,
 ) {
-  const destDay = getDestDay(operation);
-  const destKey = getDayKey(destDay);
+  function adjustMinutes(cursorMinutes: number): number {
+    return snapMinutes(
+      cursorMinutes - operation.startCursorTimeDelta,
+      settings,
+    );
+  }
 
-  const withTaskInRightColumn = moveTaskToColumn(
-    destDay,
-    operation.task,
-    baseline,
-  );
-
-  const destTasks = withTaskInRightColumn[destKey];
-  const transformFn = transformers[operation.mode];
-
-  isNotVoid(transformFn, `No transformer for operation: ${operation.mode}`);
-
-  const [readonly, editable] = partition(
-    (task) => task.calendar,
-    destTasks.withTime,
-  );
-  const withTimeSorted = sortByStartMinutes(editable);
-  const transformed = transformFn(
-    withTimeSorted,
-    operation.task,
-    snapMinutes(cursorMinutes - operation.startCursorTimeDelta, settings),
-  );
-  const merged = [...readonly, ...transformed];
-
-  return {
-    ...withTaskInRightColumn,
-    [destKey]: {
-      ...destTasks,
-      withTime: merged,
+  const adjustedTimeCursorHistory = {
+    current: {
+      ...timeCursorHistory.current,
+      minutes: adjustMinutes(timeCursorHistory.current.minutes),
+    },
+    previous: {
+      ...timeCursorHistory.previous,
+      minutes: adjustMinutes(timeCursorHistory.previous.minutes),
     },
   };
+
+  const destDay = getDestDay(operation, timeCursorHistory.current);
+  const destKey = getDayKey(destDay);
+
+  const transformation = transformers[operation.mode];
+  isNotVoid(transformation, `No transformer for operation: ${operation.mode}`);
+
+  if (
+    adjustedTimeCursorHistory.current &&
+    adjustedTimeCursorHistory.previous &&
+    adjustedTimeCursorHistory.current.day ===
+      adjustedTimeCursorHistory.previous.day &&
+    adjustedTimeCursorHistory.current.minutes ===
+      adjustedTimeCursorHistory.previous.minutes
+  ) {
+    return;
+  } else {
+    const withTaskInRightColumn = moveTaskToColumn(
+      destDay,
+      operation.task,
+      baseline,
+    );
+
+    const destTasks = withTaskInRightColumn[destKey];
+
+    const [readonly, editable] = partition(
+      (task) => task.calendar,
+      destTasks.withTime,
+    );
+    const withTimeSorted = sortByStartMinutes(editable);
+    const transformed = transformation.transform(
+      withTimeSorted,
+      operation.task,
+      adjustedTimeCursorHistory.current.minutes,
+    );
+    const merged = [...readonly, ...transformed];
+
+    return {
+      ...withTaskInRightColumn,
+      [destKey]: {
+        ...destTasks,
+        withTime: merged,
+      },
+    };
+  }
 }

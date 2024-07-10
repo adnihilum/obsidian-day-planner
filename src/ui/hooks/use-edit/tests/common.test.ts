@@ -3,7 +3,7 @@ import { get } from "svelte/store";
 import { toMinutes } from "../../../../util/moment";
 import { baseTask } from "../../test-utils";
 
-import { dayKey } from "./util/fixtures";
+import { dayKey, nextDay } from "./util/fixtures";
 import { setUp } from "./util/setup";
 
 // todo: remove duplication, ideally this check should be pulled out of the diffing logic
@@ -16,18 +16,12 @@ jest.mock("obsidian-daily-notes-interface", () => ({
 
 describe("drag one & common edit mechanics", () => {
   test("after edit confirmation, tasks freeze and stop reacting to cursor", async () => {
-    const {
-      todayControls,
-      nextDayControls,
-      moveCursorTo,
-      displayedTasks,
-      confirmEdit,
-    } = setUp();
+    const { editHandlers, moveCursorTo, displayedTasks, confirmEdit } = setUp();
 
-    todayControls.handleGripMouseDown(baseTask);
+    editHandlers.handleGripMouseDown(baseTask);
     moveCursorTo("01:00");
     await confirmEdit();
-    nextDayControls.handleMouseEnter();
+    editHandlers.handleMouseEnter(nextDay);
     moveCursorTo("03:00");
 
     expect(get(displayedTasks)).toMatchObject({
@@ -38,9 +32,9 @@ describe("drag one & common edit mechanics", () => {
   });
 
   test("when a task is set to its current time, nothing happens", async () => {
-    const { todayControls, confirmEdit, props } = setUp();
+    const { editHandlers, confirmEdit, props } = setUp();
 
-    todayControls.handleGripMouseDown(baseTask);
+    editHandlers.handleGripMouseDown(baseTask);
     await confirmEdit();
 
     expect(props.onUpdate).not.toHaveBeenCalled();

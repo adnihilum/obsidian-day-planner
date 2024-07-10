@@ -12,6 +12,7 @@ import { useCursorMinutes } from "./use-cursor-minutes";
 import { useDisplayedTasks } from "./use-displayed-tasks";
 import { useDisplayedTasksForDay } from "./use-displayed-tasks-for-day";
 import { useEditActions } from "./use-edit-actions";
+import { useTimeCursors } from "./use-time-cursor";
 
 export interface UseEditContextProps {
   obsidianFacade: ObsidianFacade;
@@ -31,6 +32,8 @@ export function useEditContext({
   const cursor = useCursor(editOperation);
   const pointerOffsetY = writable(0);
   const cursorMinutes = useCursorMinutes(pointerOffsetY, settings);
+  const day = writable<Moment>();
+  const { timeCursor, timeCursorHistory } = useTimeCursors(day, cursorMinutes);
 
   // todo: change misleading name
   const baselineTasks = writable({}, (set) => {
@@ -40,7 +43,7 @@ export function useEditContext({
   const displayedTasks = useDisplayedTasks({
     baselineTasks,
     editOperation,
-    cursorMinutes,
+    timeCursorHistory,
     settings,
   });
 
@@ -51,25 +54,24 @@ export function useEditContext({
     onUpdate,
   });
 
-  function getEditHandlers(day: Moment) {
-    const handlers = createEditHandlers({
-      day,
-      obsidianFacade,
-      startEdit,
-      confirmEdit,
-      cursorMinutes,
-      editOperation,
-      settings,
-    });
+  const editHandlersRaw = createEditHandlers({
+    obsidianFacade,
+    startEdit,
+    confirmEdit,
+    editOperation,
+    settings,
+    timeCursor,
+  });
 
-    return {
-      ...handlers,
-      cursor,
-      cancelEdit,
-      pointerOffsetY,
-      displayedTasks: useDisplayedTasksForDay(displayedTasks, day),
-    };
-  }
+  const editHandlers = {
+    ...editHandlersRaw,
+    cursor,
+    cancelEdit,
+    pointerOffsetY,
+    getDisplayedTasks: (day: Moment) =>
+      useDisplayedTasksForDay(displayedTasks, day),
+    handleMouseEnter: (currentDay: Moment) => day.set(currentDay),
+  };
 
   // todo: return stuff only once
   return {
@@ -77,7 +79,7 @@ export function useEditContext({
     displayedTasks,
     confirmEdit,
     cancelEdit,
-    getEditHandlers,
+    editHandlers,
     editOperation,
   };
 }
