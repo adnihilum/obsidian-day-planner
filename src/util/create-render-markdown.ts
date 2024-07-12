@@ -6,8 +6,14 @@ export const createRenderMarkdown =
 
     el.empty();
 
-    // TODO: investigate why `await` doesn't work as expected here
-    MarkdownRenderer.render(app, markdown, el, "", loader);
+    const newElement = document.createElement("div");
+
+    // postpone markdown rendering, and attach it's result whenever its ready
+    Promise.resolve(1)
+      .then(() =>
+        MarkdownRenderer.render(app, markdown, newElement, "", loader),
+      )
+      .then(() => el.appendChild(newElement));
 
     loader.load();
 
