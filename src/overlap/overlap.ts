@@ -69,12 +69,16 @@ function sortPredicatTimeBlockHalf(a: TimeBlockHalf, b: TimeBlockHalf): number {
 export function computeOverlap(items: Array<TimeBlock>): Map<string, Overlap> {
   const overlapingTimeBlocks = calculateOverlappingItemsMap(items);
 
-  return items.reduce((overlapLookup, item) => {
+  const overlapLookup = new Map<string, Overlap>();
+
+  items.forEach((item) => {
     const overlapGroup = Array.from(overlapingTimeBlocks.get(item)).sort(
       sortPredicateLongFirst,
     );
-    return computeOverlapForGroup(overlapGroup, overlapLookup);
-  }, new Map());
+    computeOverlapForGroup(overlapGroup, overlapLookup);
+  });
+
+  return overlapLookup;
 }
 
 interface TimeBlockHalf {
@@ -161,21 +165,19 @@ function calculateOverlappingItemsMap(
 
 function computeOverlapForGroup(
   overlapGroup: Array<TimeBlock>,
-  previousLookup: Map<string, Overlap>,
-) {
-  const newLookup = new Map([...previousLookup]);
-
+  lookup: Map<string, Overlap>,
+): void {
   const [itemsPlacedPreviously, itemsToBePlaced] = partition(
-    ({ id }) => newLookup.has(id),
+    ({ id }) => lookup.has(id),
     overlapGroup,
   );
 
   if (itemsToBePlaced.length === 0) {
-    return newLookup;
+    return;
   }
 
   const fractionOfPlacedItems = itemsPlacedPreviously.reduce((sum, current) => {
-    const { span, columns } = newLookup.get(current.id);
+    const { span, columns } = lookup.get(current.id);
     return new Fraction(span, columns).add(sum);
   }, new Fraction(0));
 
@@ -186,7 +188,7 @@ function computeOverlapForGroup(
 
   const maxPreviousPlaceColumns = itemsPlacedPreviously.reduce(
     (acc, current) => {
-      const { columns } = newLookup.get(current.id);
+      const { columns } = lookup.get(current.id);
       return acc.gcd(new Fraction(1, columns));
     },
     new Fraction(1),
@@ -202,7 +204,7 @@ function computeOverlapForGroup(
   const slots = Array(columnsForNewGroup).fill(empty);
 
   itemsPlacedPreviously.forEach((item) => {
-    const { start, span, columns: previousColumns } = newLookup.get(item.id);
+    const { start, span, columns: previousColumns } = lookup.get(item.id);
 
     const scale = columnsForNewGroup / previousColumns;
     const scaledStart = scale * start;
@@ -226,10 +228,10 @@ function computeOverlapForGroup(
   const finalOverlaps = holesToOverlaps(finalHoles, columnsForNewGroup);
 
   zip(itemsToBePlaced, finalOverlaps).forEach(([itemInGroup, overlap]) => {
-    newLookup.set(itemInGroup.id, overlap);
+    lookup.set(itemInGroup.id, overlap);
   });
 
-  return newLookup;
+  return;
 }
 
 function zip<S1, S2>(
