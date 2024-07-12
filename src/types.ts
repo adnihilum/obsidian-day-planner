@@ -18,7 +18,7 @@ export interface TaskLocation {
 
 export type OnUpdateFn = (
   taskUpdate: ReturnType<typeof updateText> & {
-    moved: { dayKey: string; task: PlacedTask }[];
+    moved: { dayKey: string; task: Task }[];
   },
 ) => Promise<void | void[]>;
 
@@ -49,15 +49,12 @@ export interface Task extends UnscheduledTask {
 }
 
 export interface TasksForDay {
-  withTime: PlacedTask[];
+  withTime: Task[];
   noTime: UnscheduledTask[];
 }
 
 // todo: rename to DayToTasks
 export type Tasks = Record<string, TasksForDay>;
-
-// TODO: delete this type
-export interface PlacedTask extends Task {}
 
 export type RelationToNow = "past" | "present" | "future";
 

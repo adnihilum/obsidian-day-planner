@@ -5,7 +5,7 @@ import {
   getDateFromPath,
 } from "obsidian-daily-notes-interface";
 
-import { Diff, PlacedTask, Task, Tasks, TasksForDay } from "../types";
+import { Diff, Task, Tasks, TasksForDay } from "../types";
 
 import {
   isEqualTask,
@@ -113,7 +113,7 @@ export function getTasksInDailyNotesWithUpdatedDay(tasks: Tasks) {
     });
 }
 
-function getPristine(flatBaseline: PlacedTask[], flatNext: PlacedTask[]) {
+function getPristine(flatBaseline: Task[], flatNext: Task[]) {
   return flatNext.filter((task) =>
     flatBaseline.find((baselineTask) => isEqualTask(task, baselineTask)),
   );
@@ -126,7 +126,7 @@ function getCreatedTasks(
   return differenceBy((x) => x.task.id, next, base);
 }
 
-function getTasksWithUpdatedTime(base: PlacedTask[], next: PlacedTask[]) {
+function getTasksWithUpdatedTime(base: Task[], next: Task[]) {
   const pristine = getPristine(base, next);
 
   return difference(next, pristine).filter((task) => !task.isGhost);

@@ -4,7 +4,7 @@ import { getDateFromPath } from "obsidian-daily-notes-interface";
 
 import { getHeadingByText, getListItemsUnderHeading } from "../parser/parser";
 import type { DayPlannerSettings } from "../settings";
-import type { PlacedTask, Task } from "../types";
+import type { Task } from "../types";
 import { createDailyNoteIfNeeded } from "../util/daily-notes";
 import { updateTaskText } from "../util/task-utils";
 
@@ -16,7 +16,7 @@ export class PlanEditor {
     private readonly obsidianFacade: ObsidianFacade,
   ) {}
 
-  async ensureFilesForTasks(tasks: { dayKey: string; task: PlacedTask }[]) {
+  async ensureFilesForTasks(tasks: { dayKey: string; task: Task }[]) {
     return Promise.all(
       tasks.map(async ({ dayKey, task }) => {
         const { path } = await createDailyNoteIfNeeded(window.moment(dayKey));
@@ -39,8 +39,8 @@ export class PlanEditor {
     moved,
   }: {
     updated: Task[];
-    created: { dayKey: string; task: PlacedTask }[];
-    moved: { dayKey: string; task: PlacedTask }[];
+    created: { dayKey: string; task: Task }[];
+    moved: { dayKey: string; task: Task }[];
   }) => {
     if (created.length > 0) {
       const [task] = await this.ensureFilesForTasks(created);

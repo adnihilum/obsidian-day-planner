@@ -1,9 +1,9 @@
-import { PlacedTask } from "../../../../types";
+import { Task } from "../../../../types";
 
 export abstract class Transformation {
   abstract transform(
-    baseline: PlacedTask[],
-    editTarget: PlacedTask,
+    baseline: Task[],
+    editTarget: Task,
     cursorTime: number,
-  ): PlacedTask[];
+  ): Task[];
 }

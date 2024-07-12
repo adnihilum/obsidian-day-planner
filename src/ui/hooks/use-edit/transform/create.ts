@@ -1,12 +1,8 @@
-import type { PlacedTask } from "../../../../types";
+import type { Task } from "../../../../types";
 import { Transformation } from "./transformation";
 
 export class Create extends Transformation {
-  transform(
-    baseline: PlacedTask[],
-    editTarget: PlacedTask,
-    cursorTime: number,
-  ): PlacedTask[] {
+  transform(baseline: Task[], editTarget: Task, cursorTime: number): Task[] {
     return baseline.map((task) => {
       if (task.id === editTarget.id) {
         return {

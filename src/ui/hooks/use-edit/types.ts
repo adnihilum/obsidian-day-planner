@@ -1,4 +1,4 @@
-import type { PlacedTask } from "../../../types";
+import type { Task } from "../../../types";
 
 export enum EditMode {
   DRAG = "DRAG",
@@ -9,7 +9,7 @@ export enum EditMode {
 }
 
 export interface EditOperation {
-  task: PlacedTask;
+  task: Task;
   mode: EditMode;
   startCursorTimeDelta: number;
 }

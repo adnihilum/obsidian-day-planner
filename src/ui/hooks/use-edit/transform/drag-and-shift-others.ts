@@ -1,15 +1,11 @@
 import { last } from "lodash";
 
-import type { PlacedTask } from "../../../../types";
+import type { Task } from "../../../../types";
 import { getEndMinutes } from "../../../../util/task-utils";
 import { Transformation } from "./transformation";
 
 export class DragAndShiftOthers extends Transformation {
-  transform(
-    baseline: PlacedTask[],
-    editTarget: PlacedTask,
-    cursorTime: number,
-  ): PlacedTask[] {
+  transform(baseline: Task[], editTarget: Task, cursorTime: number): Task[] {
     const index = baseline.findIndex((task) => task.id === editTarget.id);
     const preceding = baseline.slice(0, index);
     const following = baseline.slice(index + 1);

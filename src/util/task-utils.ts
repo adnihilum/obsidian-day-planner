@@ -9,8 +9,8 @@ import {
   scheduledPropRegExp,
   shortScheduledPropRegExp,
 } from "../regexp";
-import type { Task } from "../types";
-import { PlacedTask } from "../types";
+
+import { Task } from "../types";
 
 import { getId } from "./id";
 import { addMinutes, minutesToMoment, minutesToMomentOfDay } from "./moment";
@@ -37,13 +37,13 @@ export function getEndTime(task: {
   return task.startTime.clone().add(task.durationMinutes, "minutes");
 }
 
-export function getRenderKey(task: PlacedTask) {
+export function getRenderKey(task: Task) {
   return `${task.startMinutes} ${getEndMinutes(task)} ${task.displayedText} ${
     task.isGhost ?? ""
   }`;
 }
 
-export function getNotificationKey(task: PlacedTask) {
+export function getNotificationKey(task: Task) {
   return `${task.location?.path ?? "blank"}::${task.startMinutes}::${
     task.durationMinutes
   }::${task.displayedText}`;
@@ -112,7 +112,7 @@ export function offsetYToMinutes(
   return (offsetY + hiddenHoursSize) / zoomLevel;
 }
 
-export function createTask(day: Moment, startMinutes: number): PlacedTask {
+export function createTask(day: Moment, startMinutes: number): Task {
   return {
     id: getId(),
     startMinutes,

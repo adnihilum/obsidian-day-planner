@@ -2,7 +2,7 @@ import { sortBy } from "lodash/fp";
 import { derived, Readable } from "svelte/store";
 
 import { currentTime } from "../../global-store/current-time";
-import { PlacedTask, TasksForDay } from "../../types";
+import { Task, TasksForDay } from "../../types";
 import { getDiffInMinutes } from "../../util/moment";
 import { getEndTime } from "../../util/task-utils";
 
@@ -12,12 +12,12 @@ interface UseStatusBarWidgetProps {
 
 interface Widget {
   current?: {
-    task: PlacedTask;
+    task: Task;
     timeLeft: string;
     percentageComplete: string;
   };
   next?: {
-    task: PlacedTask;
+    task: Task;
     timeToNext: string;
   };
 }

@@ -3,7 +3,7 @@ import { get, Readable, Writable } from "svelte/store";
 
 import { ObsidianFacade } from "../../../service/obsidian-facade";
 import { DayPlannerSettings } from "../../../settings";
-import { PlacedTask, UnscheduledTask } from "../../../types";
+import { Task, UnscheduledTask } from "../../../types";
 import { copy, createTask } from "../../../util/task-utils";
 
 import { EditMode, EditOperation } from "./types";
@@ -42,7 +42,7 @@ export function createEditHandlers({
     confirmEdit();
   }
 
-  function handleResizerMouseDown(task: PlacedTask) {
+  function handleResizerMouseDown(task: Task) {
     const mode =
       get(settings).editMode === "push"
         ? EditMode.RESIZE_AND_SHIFT_OTHERS
@@ -67,7 +67,7 @@ export function createEditHandlers({
     await obsidianFacade.revealLineInFile(path, line);
   }
 
-  function startDragWithOptionalPush(task: PlacedTask) {
+  function startDragWithOptionalPush(task: Task) {
     const { editMode } = get(settings);
     if (editMode === "push") {
       startEdit({
@@ -84,7 +84,7 @@ export function createEditHandlers({
     }
   }
 
-  function handleGripMouseDown(task: PlacedTask) {
+  function handleGripMouseDown(task: Task) {
     // todo: edit mode in settings is different from the enum. The names should also be different
     const { copyOnDrag } = get(settings);
     const taskOrCopy = copyOnDrag ? copy(task) : task;
@@ -92,7 +92,7 @@ export function createEditHandlers({
     startDragWithOptionalPush(taskOrCopy);
   }
 
-  function handleCopyMouseDown(task: PlacedTask) {
+  function handleCopyMouseDown(task: Task) {
     startDragWithOptionalPush(copy(task));
   }
 
