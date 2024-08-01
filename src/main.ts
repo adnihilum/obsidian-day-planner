@@ -25,6 +25,7 @@ import { createShowPreview } from "./util/create-show-preview";
 import { createDailyNoteIfNeeded } from "./util/daily-notes";
 import { notifyAboutStartedTasks } from "./util/notify-about-started-tasks";
 import { getUpdateTrigger } from "./util/store";
+import { MarkdownRenderedSnippets } from "./service/markdown-rendered-snippets";
 
 export default class DayPlanner extends Plugin {
   settings!: () => DayPlannerSettings;
@@ -32,6 +33,7 @@ export default class DayPlanner extends Plugin {
   private obsidianFacade!: ObsidianFacade;
   private planEditor!: PlanEditor;
   private dataviewFacade!: DataviewFacade;
+  private markdownRenderedSnippets!: MarkdownRenderedSnippets;
 
   async onload() {
     await this.initSettingsStore();
@@ -39,6 +41,7 @@ export default class DayPlanner extends Plugin {
     this.obsidianFacade = new ObsidianFacade(this.app);
     this.dataviewFacade = new DataviewFacade(this.app);
     this.planEditor = new PlanEditor(this.settings, this.obsidianFacade);
+    this.markdownRenderedSnippets = new MarkdownRenderedSnippets(this.app);
 
     this.registerViews();
     this.registerCommands();
@@ -133,6 +136,17 @@ export default class DayPlanner extends Plugin {
       editorCallback: (editor) =>
         editor.replaceSelection(this.planEditor.createPlannerHeading()),
     });
+
+    this.addCommand({
+      id: "clear-rendered-markdown-snippets-cache",
+      name: "Clear rendered markdown snippets cache",
+      callback: () => {
+        this.markdownRenderedSnippets.clearStorage();
+      },
+    });
+
+    setTimeout(() => this.markdownRenderedSnippets.clearStorage(), 20000); // clear markdown snippets in 20 secods after initialization (due to markdown plugins load)
+    this.markdownRenderedSnippets.runGCInBackground(300000); //run GC every 5 minutes
   }
 
   private async initSettingsStore() {
@@ -200,7 +214,7 @@ export default class DayPlanner extends Plugin {
       initWeeklyView: this.initWeeklyLeaf,
       refreshTasks: this.dataviewFacade.getAllTasksFrom,
       dataviewLoaded,
-      renderMarkdown: createRenderMarkdown(this.app),
+      renderMarkdown: createRenderMarkdown(this.markdownRenderedSnippets),
       showReleaseNotes: this.showReleaseNotes,
       editContext,
       visibleTasks,

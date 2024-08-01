@@ -1,21 +1,16 @@
-import { App, Component, MarkdownRenderer } from "obsidian";
+import { MarkdownRenderedSnippets } from "../service/markdown-rendered-snippets";
 
 export const createRenderMarkdown =
-  (app: App) => (el: HTMLElement, markdown: string) => {
-    const loader = new Component();
-
+  (markdownRenderedSnippets: MarkdownRenderedSnippets) =>
+  (el: HTMLElement, markdown: string) => {
     el.empty();
 
-    const newElement = document.createElement("div");
+    const snippet = markdownRenderedSnippets.borrowSnippet(markdown);
+    snippet.then((s) => el.appendChild(s.element));
 
-    // postpone markdown rendering, and attach it's result whenever its ready
-    Promise.resolve(1)
-      .then(() =>
-        MarkdownRenderer.render(app, markdown, newElement, "", loader),
-      )
-      .then(() => el.appendChild(newElement));
-
-    loader.load();
-
-    return () => loader.unload();
+    return () =>
+      snippet.then((s) => {
+        s.element.detach();
+        s.destroy();
+      });
   };
