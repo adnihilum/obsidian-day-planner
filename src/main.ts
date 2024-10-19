@@ -70,9 +70,6 @@ export default class DayPlanner extends Plugin {
 
   initTimelineLeafSilently = async () => {
     await this.detachLeavesOfType(viewTypeTimeline);
-    await this.app.workspace.getRightLeaf(false).setViewState({
-      type: viewTypeTimeline,
-    });
   };
 
   initTimelineLeaf = async () => {
