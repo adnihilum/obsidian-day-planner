@@ -49,7 +49,12 @@ export function mapToTasksForDay(
 ) {
   const [withTime, withoutTime] = partition(isTimeSetOnTask, tasksForDay);
 
-  const { parsed: tasksWithTime, errors } = withTime.reduce(
+  interface ReduceAccType {
+    parsed: STask[];
+    errors: Error[];
+  }
+
+  const { parsed: tasksWithTime, errors } = withTime.reduce<ReduceAccType>(
     (result, sTask) => {
       // todo: remove once proper handling is in place
       try {
@@ -64,7 +69,6 @@ export function mapToTasksForDay(
     },
     { parsed: [], errors: [] },
   );
-  // TODO: sortByStartMinutes()
 
   tasksWithTime.sort((a, b) => a.startMinutes - b.startMinutes);
 

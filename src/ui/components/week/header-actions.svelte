@@ -8,7 +8,6 @@
   import { getContext } from "svelte";
   import { Writable } from "svelte/store";
 
-
   import { dateRangeContextKey } from "../../../constants";
   import { settings } from "../../../global-store/settings";
   import { getDaysOfCurrentWeek, getDaysOfWeek } from "../../../util/moment";

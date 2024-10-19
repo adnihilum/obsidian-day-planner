@@ -13,7 +13,7 @@
   const {
     editContext: { editHandlers },
   } = getContext<ObsidianContext>(obsidianContext);
-    const {
+  const {
     getDisplayedTasks,
     cursor,
     handleTaskMouseUp,

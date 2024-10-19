@@ -1,6 +1,6 @@
 import { Moment } from "moment/moment";
 import { getDateFromPath } from "obsidian-daily-notes-interface";
-import { DataArray, DateTime, STask } from "obsidian-dataview";
+import { DateTime, STask } from "obsidian-dataview";
 
 import {
   defaultDayFormat,
@@ -14,9 +14,9 @@ import { Task, UnscheduledTask } from "../types";
 import { getId } from "./id";
 import { getDiffInMinutes, getMinutesSinceMidnight } from "./moment";
 
-export function unwrap<T>(group: ReturnType<DataArray<T>["groupBy"]>) {
-  return group.map(({ key, rows }) => [key, rows.array()]).array();
-}
+// export function unwrap<T>(group: ReturnType<DataArray<T>["groupBy"]>) {
+//   return group.map(({ key, rows }) => [key, rows.array()]).array();
+// }
 
 interface Node {
   text: string;

@@ -8,7 +8,6 @@
   const {
     editContext: { cancelEdit, cursor },
   } = getContext<ObsidianContext>(obsidianContext);
-
 </script>
 
 <!--TODO: this should be attached only once for all views-->

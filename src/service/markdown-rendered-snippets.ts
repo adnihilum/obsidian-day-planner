@@ -92,6 +92,7 @@ export class MarkdownRenderedSnippets {
     const element = document.createElement("div");
 
     // postpone markdown rendering, and attach it's result whenever its ready
+    const app = this.app;
     Promise.resolve(1).then(() =>
       MarkdownRenderer.render(app, markdown, element, "", loader),
     );
