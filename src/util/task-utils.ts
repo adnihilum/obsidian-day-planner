@@ -9,11 +9,11 @@ import {
   scheduledPropRegExp,
   shortScheduledPropRegExp,
 } from "../regexp";
-
 import { Task } from "../types";
 
 import { getId } from "./id";
 import { addMinutes, minutesToMoment, minutesToMomentOfDay } from "./moment";
+import { getDayKey } from "./tasks-utils";
 
 export function isEqualTask(a: Task, b: Task) {
   return (
@@ -38,25 +38,17 @@ export function getEndTime(task: {
 }
 
 export function getRenderKey(task: Task) {
-  return `${task.startMinutes} ${getEndMinutes(task)} ${task.displayedText} ${
-    task.isGhost ?? ""
-  }`;
+  return task.id;
 }
 
-export function getNotificationKey(task: Task) {
+export function getIdAgnosticRenderKey(task: Task) {
+  return `${task.startMinutes} ${getEndMinutes(task)} ${task.displayedText} ${task.isGhost ?? ""}`;
+}
+
+export function getNotificationKey(task: Task): string {
   return `${task.location?.path ?? "blank"}::${task.startMinutes}::${
     task.durationMinutes
   }::${task.displayedText}`;
-}
-
-export function copy(task: Task): Task {
-  return {
-    ...task,
-    id: getId(),
-    isGhost: true,
-    // TODO: there should be a better way to track which tasks are new
-    location: { ...task.location, line: undefined },
-  };
 }
 
 export function createTimestamp(
@@ -74,7 +66,7 @@ export function areValuesEmpty(record: Record<string, [] | object>) {
   return Object.values(record).every(isEmpty);
 }
 
-function taskLineToString(task: Task) {
+function taskLineToString(task: Task): string {
   return `${task.listTokens}${createTimestamp(
     task.startMinutes,
     task.durationMinutes,
@@ -82,7 +74,10 @@ function taskLineToString(task: Task) {
   )} ${task.firstLineText}`;
 }
 
-export function updateScheduledPropInText(text: string, dayKey: string) {
+export function updateScheduledPropInText(
+  text: string,
+  dayKey: string,
+): string {
   const updated = text
     .replace(shortScheduledPropRegExp, `$1${dayKey}`)
     .replace(scheduledPropRegExp, `$1${dayKey}$2`)
@@ -91,15 +86,18 @@ export function updateScheduledPropInText(text: string, dayKey: string) {
   return updated;
 }
 
-export function updateTaskText(task: Task) {
-  return { ...task, firstLineText: taskLineToString(task) };
-}
-
-export function updateTaskScheduledDay(task: Task, dayKey: string) {
+export function updateTaskScheduledDay(task: Task): Task {
   return {
     ...task,
-    firstLineText: updateScheduledPropInText(task.firstLineText, dayKey),
+    firstLineText: updateScheduledPropInText(
+      task.firstLineText,
+      getDayKey(task.day),
+    ),
   };
+}
+
+export function renderToMDFirstLine(task: Task): string {
+  return taskLineToString(task);
 }
 
 export function offsetYToMinutes(
@@ -115,6 +113,7 @@ export function offsetYToMinutes(
 export function createTask(day: Moment, startMinutes: number): Task {
   return {
     id: getId(),
+    day,
     startMinutes,
     durationMinutes: defaultDurationMinutes,
     firstLineText: "New item",

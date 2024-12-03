@@ -6,8 +6,8 @@
 </script>
 
 <hr
-  class="workspace-leaf-resize-handle"
   style={cssVarStyles}
+  class="workspace-leaf-resize-handle"
   on:mousedown|stopPropagation
 />
 

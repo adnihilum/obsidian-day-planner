@@ -1,13 +1,15 @@
 import { sortBy } from "lodash/fp";
+import { TasksContainer } from "src/tasks-container";
+import * as TC from "src/tasks-container";
 import { derived, Readable } from "svelte/store";
 
 import { currentTime } from "../../global-store/current-time";
-import { Task, TasksForDay } from "../../types";
+import { Task } from "../../types";
 import { getDiffInMinutes } from "../../util/moment";
 import { getEndTime } from "../../util/task-utils";
 
 interface UseStatusBarWidgetProps {
-  tasksForToday: Readable<TasksForDay>;
+  tasksForToday: Readable<TasksContainer>;
 }
 
 interface Widget {
@@ -32,7 +34,10 @@ export function useStatusBarWidget({ tasksForToday }: UseStatusBarWidgetProps) {
   return derived(
     [tasksForToday, currentTime],
     ([$tasksForToday, $currentTime]) => {
-      const currentItem = $tasksForToday.withTime.find(
+      const tasksForTodayWithTime = Array.from(
+        TC.withTime(new Set($tasksForToday.allTasks.values())),
+      );
+      const currentItem = tasksForTodayWithTime.find(
         (item) =>
           item.startTime.isBefore($currentTime) &&
           getEndTime(item).isAfter($currentTime),
@@ -40,7 +45,7 @@ export function useStatusBarWidget({ tasksForToday }: UseStatusBarWidgetProps) {
 
       const nextItem = sortBy(
         (task) => task.startMinutes,
-        $tasksForToday.withTime,
+        tasksForTodayWithTime,
       ).find((task) => task.startTime.isAfter($currentTime));
 
       const widget: Widget = {};

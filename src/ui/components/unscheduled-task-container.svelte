@@ -1,32 +1,58 @@
 <script lang="ts">
+  import { pipe } from "fp-ts/lib/function";
+  import * as M from "fp-ts/Map";
+  import * as O from "fp-ts/Option";
+  import * as Ord from "fp-ts/Ord";
+  import * as S from "fp-ts/Set";
+  import * as Str from "fp-ts/string";
   import { Moment } from "moment";
+  import * as TC from "src/tasks-container";
+  import * as SU from "src/util/storage/storageUtils";
+  import { getDayKey } from "src/util/tasks-utils";
   import { getContext } from "svelte";
+  import { derived, writable } from "svelte/store";
 
   import { obsidianContext } from "../../constants";
   import { settings } from "../../global-store/settings";
-  import type { ObsidianContext } from "../../types";
+  import type { ObsidianContext, UnscheduledTask } from "../../types";
 
   import UnscheduledTimeBlock from "./unscheduled-time-block.svelte";
 
   export let day: Moment;
 
   const {
-    editContext: { editHandlers },
+    editContext: { displayedTasks, editHandlers },
   } = getContext<ObsidianContext>(obsidianContext);
   const {
-    getDisplayedTasks,
     cursor,
     handleTaskMouseUp,
     handleTaskDblClick,
     handleUnscheduledTaskGripMouseDown,
   } = editHandlers;
 
-  $: displayedTasks = getDisplayedTasks(day);
+  const dayStoreW = writable(day);
+
+  $: dayStoreW.set(day);
+
+  const dayStore = SU.removeDups(TC.eqMoment)(dayStoreW, day);
+  const displayedTasksWithNoTime = derived(
+    [displayedTasks, dayStore],
+    ([$displayedTasks, $day]) =>
+      pipe(
+        $displayedTasks.byDate,
+        M.lookup(Str.Eq)(getDayKey($day)),
+        O.getOrElse(() => new Set()),
+        TC.withNoTime,
+        S.toArray(
+          Ord.contramap((t: UnscheduledTask) => t.displayedText)(Str.Ord),
+        ),
+      ),
+  );
 </script>
 
-{#if $displayedTasks.noTime.length > 0 && $settings.showUncheduledTasks}
+{#if $displayedTasksWithNoTime.length > 0 && $settings.showUncheduledTasks}
   <div class="unscheduled-task-container">
-    {#each $displayedTasks.noTime as task}
+    {#each $displayedTasksWithNoTime as task}
       <UnscheduledTimeBlock
         gripCursor={$cursor.gripCursor}
         onGripMouseDown={() => handleUnscheduledTaskGripMouseDown(task)}

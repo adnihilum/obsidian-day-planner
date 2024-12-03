@@ -1,32 +1,35 @@
 import { Moment } from "moment";
+import { PlanEditor } from "src/service/plan-editor";
+import { TasksContainer } from "src/tasks-container";
+import * as TC from "src/tasks-container";
+import * as SU from "src/util/storage/storageUtils";
 import { Readable, writable } from "svelte/store";
 
 import { ObsidianFacade } from "../../../service/obsidian-facade";
 import { DayPlannerSettings } from "../../../settings";
-import { OnUpdateFn, TasksForDay } from "../../../types";
 
 import { createEditHandlers } from "./create-edit-handlers";
 import { useCursor } from "./cursor";
+import { TimelineKeeper } from "./timeline-keeper";
+import { useTransformation } from "./transform/transform";
 import { EditOperation } from "./types";
 import { useCursorMinutes } from "./use-cursor-minutes";
-import { useDisplayedTasks } from "./use-displayed-tasks";
 import { useDisplayedTasksForDay } from "./use-displayed-tasks-for-day";
 import { useEditActions } from "./use-edit-actions";
 import { useTimeCursors } from "./use-time-cursor";
 
 export interface UseEditContextProps {
   obsidianFacade: ObsidianFacade;
-  onUpdate: OnUpdateFn;
   settings: Readable<DayPlannerSettings>;
-  visibleTasks: Readable<Record<string, TasksForDay>>;
+  visibleTasks: Readable<TasksContainer>;
+  planEditor: PlanEditor;
 }
 
-// todo: the name is misleading
 export function useEditContext({
   obsidianFacade,
-  onUpdate,
   settings,
   visibleTasks,
+  planEditor,
 }: UseEditContextProps) {
   const editOperation = writable<EditOperation | undefined>();
   const cursor = useCursor(editOperation);
@@ -35,24 +38,26 @@ export function useEditContext({
   const day = writable<Moment>();
   const { timeCursor, timeCursorHistory } = useTimeCursors(day, cursorMinutes);
 
-  // todo: change misleading name
-  const baselineTasks = writable({}, (set) => {
-    return visibleTasks.subscribe(set);
-  });
+  const timelineKeeper = new TimelineKeeper(planEditor);
 
-  const displayedTasks = useDisplayedTasks({
-    baselineTasks,
-    editOperation,
-    timeCursorHistory,
-    settings,
-  });
+  const unduppedVisibleTasks = SU.removeDups(TC.eqByContentAndLocation)(
+    visibleTasks,
+    new TasksContainer(),
+  );
 
-  const { startEdit, confirmEdit, cancelEdit } = useEditActions({
+  unduppedVisibleTasks.subscribe((tc) =>
+    timelineKeeper.changedTasksFromDisk(tc),
+  );
+
+  useTransformation(editOperation, timeCursorHistory, settings, timelineKeeper);
+
+  const displayedTasks: Readable<TasksContainer> =
+    timelineKeeper.displayedTasksStore;
+
+  const { startEdit, confirmEdit, cancelEdit } = useEditActions(
     editOperation,
-    baselineTasks,
-    displayedTasks,
-    onUpdate,
-  });
+    timelineKeeper,
+  );
 
   const editHandlersRaw = createEditHandlers({
     obsidianFacade,
@@ -68,12 +73,11 @@ export function useEditContext({
     cursor,
     cancelEdit,
     pointerOffsetY,
-    getDisplayedTasks: (day: Moment) =>
+    getDisplayedTasks: (day: Readable<Moment>) =>
       useDisplayedTasksForDay(displayedTasks, day),
     handleMouseEnter: (currentDay: Moment) => day.set(currentDay),
   };
 
-  // todo: return stuff only once
   return {
     cursor,
     displayedTasks,

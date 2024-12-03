@@ -1,13 +1,14 @@
 <script lang="ts">
+  import { TasksContainer } from "src/tasks-container";
   import { Readable } from "svelte/store";
 
   import { settings } from "../../global-store/settings";
-  import { TasksForDay } from "../../types";
   import { useStatusBarWidget } from "../hooks/use-status-bar-widget";
+
   import StatusbarTimeBlock from "./statusbar-time-block.svelte";
 
   export let onClick: () => Promise<void>;
-  export let tasksForToday: Readable<TasksForDay>;
+  export let tasksForToday: Readable<TasksContainer>;
   export let errorStore: Readable<Error>;
 
   const statusBarProps = useStatusBarWidget({ tasksForToday });

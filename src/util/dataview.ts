@@ -46,6 +46,7 @@ export function toString(node: Node, indentation = "") {
 
 export function toUnscheduledTask(sTask: STask, day: Moment): UnscheduledTask {
   return {
+    day,
     durationMinutes: defaultDurationMinutes,
     // todo: bad abstraction
     listTokens: getListTokens(sTask),
@@ -77,6 +78,7 @@ export function toTask(sTask: STask, day: Moment): Task {
     : undefined;
 
   const task: Task = {
+    day,
     startTime,
     listTokens: getListTokens(sTask),
     firstLineText,

@@ -1,16 +1,18 @@
 import type { Task } from "../../../../types";
-import { toSpliced } from "../../../../util/to-spliced";
+import { seoResize, SimpleEditOperation } from "../simple-edit-operation";
+import { EditOperation } from "../types";
+import { TimeCursor } from "../use-time-cursor";
+
 import { Transformation } from "./transformation";
 
 export class Resize extends Transformation {
-  transform(baseline: Task[], editTarget: Task, cursorTime: number): Task[] {
-    const index = baseline.findIndex((task) => task.id === editTarget.id);
-    const durationMinutes = cursorTime - editTarget.startMinutes;
-    const updated = {
-      ...editTarget,
-      durationMinutes,
-    };
-
-    return toSpliced(baseline, index, updated);
+  transform(
+    baseline: Task[],
+    editOperation: EditOperation,
+    cursorTime: TimeCursor,
+  ): SimpleEditOperation[] {
+    const durationMinutes =
+      cursorTime.minutes - editOperation.task.startMinutes;
+    return [seoResize(editOperation.task.id, durationMinutes)];
   }
 }

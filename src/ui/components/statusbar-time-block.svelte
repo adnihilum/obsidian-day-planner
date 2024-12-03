@@ -9,7 +9,7 @@
 </script>
 
 <div class="content">
-  <TimeBlockBase {task} on:mouseup on:dblclick textWrap={false}>
+  <TimeBlockBase {task} textWrap={false} on:mouseup on:dblclick>
     <!-- padding should be set to zero here -->
     <MarkdownBlockContent {task}>
       <RenderedMarkdown {task} />

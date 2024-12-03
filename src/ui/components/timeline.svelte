@@ -1,7 +1,13 @@
 <script lang="ts">
+  import { pipe } from "fp-ts/lib/function";
+  import * as Ord from "fp-ts/lib/Ord";
+  import * as S from "fp-ts/lib/Set";
+  import * as Str from "fp-ts/lib/string";
   import { Moment } from "moment";
+  import * as TC from "src/tasks-container";
+  import * as SU from "src/util/storage/storageUtils";
   import { getContext } from "svelte";
-  import { Writable } from "svelte/store";
+  import { derived, get, writable, Writable } from "svelte/store";
 
   import { dateRangeContextKey, obsidianContext } from "../../constants";
   import { getVisibleHours } from "../../global-store/derived-settings";
@@ -18,8 +24,10 @@
   import ScheduledTaskContainer from "./scheduled-task-container.svelte";
 
   // TODO: showRuler or add <slot name="left-gutter" />
-  export let day: Moment | undefined = undefined;
+  export let day: Moment;
   export let isUnderCursor = false;
+
+  const dayStore: Writable<Moment> = writable(day);
 
   const {
     editContext: { confirmEdit, editOperation, editHandlers },
@@ -39,8 +47,28 @@
     cursor,
   } = editHandlers;
 
-  $: actualDay = day || $dateRange[0];
-  $: displayedTasks = getDisplayedTasks(actualDay);
+  $: dayStore.set(day);
+
+  const actualDay = pipe(
+    derived(
+      [dateRange, dayStore],
+      ([$dateRange, $day]) => $day || $dateRange[0],
+    ),
+    SU.removeDups(TC.eqMoment),
+  ); //TODO:  dateRange doesn't change
+
+  actualDay.subscribe(
+    ($actualDay) =>
+      `actualDay = ${$actualDay}, day = ${get(dayStore)}, $dateRange[0] = ${get(dateRange)[0]}`,
+  );
+
+  const displayedTasksWithTime = derived(
+    getDisplayedTasks(actualDay),
+    ($displayedTasks) =>
+      S.toArray(Ord.contramap(getRenderKey)(Str.Ord))(
+        TC.withTime($displayedTasks.allTasksSet()),
+      ),
+  );
 </script>
 
 <svelte:window on:blur={cancelEdit} />
@@ -48,25 +76,25 @@
 <svelte:document on:mouseup={cancelEdit} />
 
 <Column visibleHours={getVisibleHours($settings)}>
-  {#if isToday(actualDay)}
+  {#if isToday($actualDay)}
     <Needle autoScrollBlocked={isUnderCursor} />
   {/if}
 
   <ScheduledTaskContainer
     {pointerOffsetY}
     on:dblclick={handleContainerDblClick}
-    on:mouseenter={() => handleMouseEnter(actualDay)}
+    on:mouseenter={() => handleMouseEnter($actualDay)}
     on:mouseup={confirmEdit}
   >
-    {#each $displayedTasks.withTime as task (getRenderKey(task))}
+    {#each $displayedTasksWithTime as task (getRenderKey(task))}
       {#if task.calendar}
         <RemoteTimeBlock {task} />
       {:else}
         <LocalTimeBlock
           gripCursor={$cursor.gripCursor}
           isResizeHandleVisible={!$editOperation}
-          onGripMouseDown={() => handleGripMouseDown(task)}
           onCopyMouseDown={() => handleCopyMouseDown(task)}
+          onGripMouseDown={() => handleGripMouseDown(task)}
           onResizerMouseDown={() => handleResizerMouseDown(task)}
           {task}
           on:mouseup={() => handleTaskMouseUp(task)}

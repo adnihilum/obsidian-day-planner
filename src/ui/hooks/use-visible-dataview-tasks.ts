@@ -1,43 +1,46 @@
+import * as Array from "fp-ts/Array";
+import { Dictionary } from "lodash";
 import { groupBy } from "lodash/fp";
 import { Moment } from "moment";
 import { STask } from "obsidian-dataview";
+import { TasksContainer } from "src/tasks-container";
+import * as TC from "src/tasks-container";
+import { UnscheduledTask } from "src/types";
 import { derived, Readable } from "svelte/store";
 
 import { settings } from "../../global-store/settings";
-import { TasksForDay } from "../../types";
 import { getScheduledDay } from "../../util/dataview";
 import { mapToTasksForDay } from "../../util/get-tasks-for-day";
-import { getDayKey, getEmptyRecordsForDay } from "../../util/tasks-utils";
+import { getDayKey } from "../../util/tasks-utils";
 
 export function useVisibleDataviewTasks(
   dataviewTasks: Readable<STask[]>,
   visibleDays: Readable<Moment[]>,
-) {
+): Readable<TasksContainer> {
   return derived(
     [visibleDays, dataviewTasks, settings],
     ([$visibleDays, $dataviewTasks, $settings]) => {
-      const dayToSTasks = groupBy(getScheduledDay, $dataviewTasks);
+      const dayToSTasks: Dictionary<STask[]> = groupBy(
+        getScheduledDay,
+        $dataviewTasks,
+      );
 
-      return $visibleDays.reduce<Record<string, TasksForDay>>((result, day) => {
-        const key = getDayKey(day);
-        const sTasksForDay = dayToSTasks[key];
+      const allVisibleTasks: UnscheduledTask[] = Array.flatMap(
+        $visibleDays,
+        (day) => {
+          const key = getDayKey(day);
+          const sTasksForDay = dayToSTasks[key];
 
-        if (sTasksForDay) {
-          // todo: process errors
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const { errors, ...tasks } = mapToTasksForDay(
-            day,
-            sTasksForDay,
-            $settings,
-          );
+          if (sTasksForDay) {
+            const tasks = mapToTasksForDay(day, sTasksForDay, $settings);
+            return [...tasks.noTime, ...tasks.withTime];
+          } else {
+            return [];
+          }
+        },
+      );
 
-          result[key] = tasks;
-        } else {
-          result[key] = getEmptyRecordsForDay();
-        }
-
-        return result;
-      }, {});
+      return TC.fromArray(allVisibleTasks);
     },
   );
 }

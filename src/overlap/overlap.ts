@@ -1,11 +1,13 @@
+import assert from "assert";
+
 import Fraction from "fraction.js";
 import { partition } from "lodash/fp";
 
 import type { Overlap, TimeBlock, Task } from "../types";
-import { getEndMinutes, getRenderKey } from "../util/task-utils";
+import { getEndMinutes, getIdAgnosticRenderKey } from "../util/task-utils";
+import { zip } from "../util/zip";
 
 import { getHorizontalPlacing } from "./horizontal-placing";
-import assert from "assert";
 
 const empty = 0;
 const taken = 1;
@@ -234,20 +236,6 @@ function computeOverlapForGroup(
   return;
 }
 
-function zip<S1, S2>(
-  firstCollection: Array<S1>,
-  lastCollection: Array<S2>,
-): Array<[S1, S2]> {
-  const length = Math.min(firstCollection.length, lastCollection.length);
-  const zipped: Array<[S1, S2]> = [];
-
-  for (let index = 0; index < length; index++) {
-    zipped.push([firstCollection[index], lastCollection[index]]);
-  }
-
-  return zipped;
-}
-
 function findHoles<T>(slots: Array<T>): Holes {
   const holes: Holes = [];
   let holeIdx = 0;
@@ -461,13 +449,13 @@ export function addHorizontalPlacing(tasks: Task[]) {
   }
 
   const tasksForComputation = tasks
-    .map((t) => ({ ...t, id: getRenderKey(t) }))
+    .map((t) => ({ ...t, id: getIdAgnosticRenderKey(t) }))
     .sort(sortPredicate);
 
   const overlapLookup = computeOverlap(tasksForComputation);
 
   return tasks.map((task) => {
-    const overlap = overlapLookup.get(getRenderKey(task));
+    const overlap = overlapLookup.get(getIdAgnosticRenderKey(task));
 
     return {
       ...task,

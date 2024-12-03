@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Task } from "../../types";
-  import Copy from "./copy.svelte";
 
+  import Copy from "./copy.svelte";
   import Grip from "./grip.svelte";
   import MarkdownBlockContent from "./markdown-block-content.svelte";
   import RenderedMarkdown from "./rendered-markdown.svelte";

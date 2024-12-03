@@ -1,7 +1,6 @@
 import moment from "moment/moment";
-
-import { TasksForDay } from "../../../../../types";
-import { baseTask } from "../../../test-utils";
+import { TasksContainer } from "src/tasks-container";
+import * as TC from "src/tasks-container";
 
 export const dayKey = "2023-01-01";
 
@@ -11,17 +10,8 @@ export const nextDayKey = "2023-01-02";
 
 export const nextDay = moment(nextDayKey);
 
-export const emptyTasks: Record<string, TasksForDay> = {
-  [dayKey]: { withTime: [], noTime: [] },
-  [nextDayKey]: { withTime: [], noTime: [] },
-};
+export const emptyTasks: TasksContainer = TC.fromArray([]); //TODO:  fix it later
 
-export const baseTasks: Record<string, TasksForDay> = {
-  [dayKey]: { withTime: [baseTask], noTime: [] },
-  [nextDayKey]: { withTime: [], noTime: [] },
-};
+export const baseTasks: TasksContainer = TC.fromArray([]);
 
-export const unscheduledTask: Record<string, TasksForDay> = {
-  [dayKey]: { withTime: [], noTime: [baseTask] },
-  [nextDayKey]: { withTime: [], noTime: [] },
-};
+export const unscheduledTask: TasksContainer = TC.fromArray([]);

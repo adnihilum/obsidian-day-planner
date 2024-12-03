@@ -9,6 +9,7 @@ import {
 } from "./constants";
 import { settings } from "./global-store/settings";
 import { DataviewFacade } from "./service/dataview-facade";
+import { MarkdownRenderedSnippets } from "./service/markdown-rendered-snippets";
 import { ObsidianFacade } from "./service/obsidian-facade";
 import { PlanEditor } from "./service/plan-editor";
 import { DayPlannerSettings, defaultSettings } from "./settings";
@@ -25,7 +26,6 @@ import { createShowPreview } from "./util/create-show-preview";
 import { createDailyNoteIfNeeded } from "./util/daily-notes";
 import { notifyAboutStartedTasks } from "./util/notify-about-started-tasks";
 import { getUpdateTrigger } from "./util/store";
-import { MarkdownRenderedSnippets } from "./service/markdown-rendered-snippets";
 
 export default class DayPlanner extends Plugin {
   settings!: () => DayPlannerSettings;

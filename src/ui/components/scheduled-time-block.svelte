@@ -24,11 +24,11 @@
 </script>
 
 <TimeBlockPadding
+  --time-block-height={$height}
+  --time-block-left={left}
   --time-block-position="absolute"
   --time-block-top={$offset}
-  --time-block-left={left}
   --time-block-width={width}
-  --time-block-height={$height}
 >
   <TimeBlockBase
     --text-faint={$properContrastColors.faint}

@@ -35,7 +35,7 @@ function hasRecurrenceOverride(icalEvent: ical.VEvent, date: Date) {
 export function icalEventToTasks(
   icalEvent: WithIcalConfig<ical.VEvent>,
   day: Moment,
-) {
+): UnscheduledTask[] {
   if (icalEvent.rrule) {
     // todo: don't clone and modify them every single time
     const startOfDay = day.clone().startOf("day").toDate();
@@ -62,7 +62,7 @@ export function icalEventToTasks(
   const startsOnVisibleDay = day.isSame(eventStart, "day");
 
   if (startsOnVisibleDay) {
-    return icalEventToTask(icalEvent, icalEvent.start);
+    return [icalEventToTask(icalEvent, icalEvent.start)];
   }
 }
 
@@ -86,6 +86,7 @@ function icalEventToTask(
     displayedText: icalEvent.summary,
     firstLineText: icalEvent.summary,
     startTime: startTimeAdjusted,
+    day: startTimeAdjusted,
     readonly: true,
     listTokens: "- ",
   };

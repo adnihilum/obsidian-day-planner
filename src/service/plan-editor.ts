@@ -1,133 +1,123 @@
 import { groupBy } from "lodash/fp";
 import type { CachedMetadata } from "obsidian";
-import { getDateFromPath } from "obsidian-daily-notes-interface";
 
 import { getHeadingByText, getListItemsUnderHeading } from "../parser/parser";
 import type { DayPlannerSettings } from "../settings";
 import type { Task } from "../types";
-import { createDailyNoteIfNeeded } from "../util/daily-notes";
-import { updateTaskText } from "../util/task-utils";
+import { createDailyNoteIfNeeded, fileIsADailyNode } from "../util/daily-notes";
+import { renderToMDFirstLine } from "../util/task-utils";
 
 import type { ObsidianFacade } from "./obsidian-facade";
+
+export interface PlanEditorRequest {
+  updated: Task[];
+  created: Task[];
+  removed: Task[];
+}
 
 export class PlanEditor {
   constructor(
     private readonly settings: () => DayPlannerSettings,
     private readonly obsidianFacade: ObsidianFacade,
-  ) {}
+  ) {
+    this.ensureFilesForTask = this.ensureFilesForTask.bind(this);
+    this.syncTasksWithFile = this.syncTasksWithFile.bind(this);
+  }
 
-  async ensureFilesForTasks(tasks: { dayKey: string; task: Task }[]) {
-    return Promise.all(
-      tasks.map(async ({ dayKey, task }) => {
-        const { path } = await createDailyNoteIfNeeded(window.moment(dayKey));
-        await createDailyNoteIfNeeded(task.startTime);
+  async ensureFilesForTask(task: Task): Promise<Task> {
+    const { path } = await createDailyNoteIfNeeded(task.day);
 
-        if (task.location?.path) {
-          return task;
-        } else {
-          return { ...task, location: { path } };
-        }
-      }),
-    );
+    if (
+      task.location?.path &&
+      (!fileIsADailyNode(task.location?.path) || path == task.location?.path)
+    ) {
+      return task;
+    } else {
+      return {
+        ...task,
+        location: { path, line: undefined, position: undefined },
+      };
+    }
   }
 
   // todo: all except this can be re-written to use mdast
-  syncTasksWithFile = async ({
-    //TODO: what if we always look at task.startTime and task.location to get file? and to determine wheter the task is in daily notes or other file
-    updated,
-    created,
-    moved,
-  }: {
-    updated: Task[];
-    created: { dayKey: string; task: Task }[];
-    moved: { dayKey: string; task: Task }[];
-  }) => {
-    if (created.length > 0) {
-      const [task] = await this.ensureFilesForTasks(created);
+  //TODO: what if we always look at task.startTime and task.location to get file? and to determine wheter the task is in daily notes or other file
 
-      const noteForFile = await createDailyNoteIfNeeded(
-        window.moment(created[0].dayKey),
-      );
+  async syncTasksWithFile(editRequest: PlanEditorRequest): Promise<void> {
+    // const self = this;
+    await Promise.all(
+      editRequest.created.map(async (taskRaw) => {
+        const task = await this.ensureFilesForTask(taskRaw);
+        const filePathToEdit = task.location!.path;
+        await this.obsidianFacade.editFile(
+          filePathToEdit,
+          this.addTaskToFileContents(task, filePathToEdit),
+        );
+      }),
+    );
 
-      const filePathToEdit = getDateFromPath(task.location?.path, "day")
-        ? noteForFile.path
-        : task.location?.path;
-
-      return this.obsidianFacade.editFile(filePathToEdit, (contents) => {
-        // @ts-ignore
-        return this.writeTaskToFileContents(task, contents, filePathToEdit);
-      });
-    }
-
-    if (moved.length > 0) {
-      const [task] = await this.ensureFilesForTasks(moved);
-
-      const noteForFile = await createDailyNoteIfNeeded(
-        window.moment(moved[0].dayKey),
-      );
-
-      const updated = updateTaskText(task as Task);
-
-      return Promise.all([
-        this.obsidianFacade.editFile(noteForFile.path, (contents) => {
-          // @ts-ignore
-          return this.writeTaskToFileContents(
-            updated,
-            contents,
-            noteForFile.path,
-          );
-        }),
-        this.obsidianFacade.editFile(task.location.path, (contents) => {
-          // @ts-ignore
-          return this.removeTaskFromFileContents(task, contents);
-        }),
-      ]);
-    }
+    await Promise.all(
+      editRequest.removed.map(async (taskRaw) => {
+        const task = await this.ensureFilesForTask(taskRaw);
+        await this.obsidianFacade.editFile(
+          task.location!.path,
+          this.removeTaskFromFileContents(task),
+        );
+      }),
+    );
 
     const pathToEditedTasksLookup = groupBy(
       (task) => task.location.path,
-      updated,
+      editRequest.updated,
     );
 
-    const editPromises = Object.keys(pathToEditedTasksLookup).map(
-      async (path) =>
-        await this.obsidianFacade.editFile(path, (contents) =>
-          pathToEditedTasksLookup[path].reduce(
-            (result, current) => this.updateTaskInFileContents(result, current),
-            contents,
+    await Promise.all(
+      Object.keys(pathToEditedTasksLookup).map(
+        async (path) =>
+          await this.obsidianFacade.editFile(path, (contents) =>
+            pathToEditedTasksLookup[path].reduce(
+              (result, currentTask) =>
+                this.updateTaskInFileContents(currentTask)(result),
+              contents,
+            ),
           ),
-        ),
+      ),
     );
-
-    return Promise.all(editPromises);
-  };
-
-  writeTaskToFileContents(task: Task, contents: string, path: string) {
-    // todo: we can use dataview
-    const metadata = this.obsidianFacade.getMetadataForPath(path) || {};
-    const [planEndLine, splitContents] = this.getPlanEndLine(
-      contents.split("\n"),
-      metadata,
-    );
-
-    const result = [...splitContents];
-
-    const newTaskText = [
-      task.firstLineText, //TODO: text already is updated here, isn't it?
-      ...task.displayedText.split("\n").slice(1), //TODO: displayed text shouldn't be used here
-    ].join("\n");
-
-    result.splice(planEndLine + 1, 0, newTaskText);
-
-    return result.join("\n");
   }
 
-  removeTaskFromFileContents(task: Task, contents: string) {
-    const newContents = contents.split("\n");
-    const taskLinesCount = task.displayedText.split("\n").length - 1; //TODO: displayed text shouldn't be used here
-    newContents.splice(task.location.position.start.line, taskLinesCount);
+  addTaskToFileContents(
+    task: Task,
+    path: string,
+  ): (contents: string) => string {
+    return (contents: string) => {
+      // todo: we can use dataview
+      const metadata = this.obsidianFacade.getMetadataForPath(path) || {};
+      const [planEndLine, splitContents] = this.getPlanEndLine(
+        contents.split("\n"),
+        metadata,
+      );
 
-    return newContents.join("\n");
+      const result = [...splitContents];
+
+      const newTaskText = [
+        renderToMDFirstLine(task),
+        ...task.displayedText.split("\n").slice(1), //TODO: displayed text shouldn't be used here
+      ].join("\n");
+
+      result.splice(planEndLine + 1, 0, newTaskText);
+
+      return result.join("\n");
+    };
+  }
+
+  removeTaskFromFileContents(task: Task): (contents: string) => string {
+    return (contents: string) => {
+      const newContents = contents.split("\n");
+      const taskLinesCount = task.displayedText.split("\n").length - 1; //TODO: displayed text shouldn't be used here
+      newContents.splice(task.location.position.start.line, taskLinesCount);
+
+      return newContents.join("\n");
+    };
   }
 
   createPlannerHeading() {
@@ -138,20 +128,22 @@ export class PlanEditor {
     return `${headingTokens} ${plannerHeading}`;
   }
 
-  private updateTaskInFileContents(contents: string, task: Task) {
-    return contents
-      .split("\n")
-      .map((line, index) => {
-        if (index === task.location?.line) {
-          return (
-            line.substring(0, task.location.position.start.col) +
-            task.firstLineText
-          );
-        }
+  private updateTaskInFileContents(task: Task): (contents: string) => string {
+    return (contents: string) => {
+      return contents
+        .split("\n")
+        .map((line, index) => {
+          if (index === task.location?.line) {
+            return (
+              line.substring(0, task.location.position.start.col) +
+              renderToMDFirstLine(task)
+            );
+          }
 
-        return line;
-      })
-      .join("\n");
+          return line;
+        })
+        .join("\n");
+    };
   }
 
   private getPlanEndLine(

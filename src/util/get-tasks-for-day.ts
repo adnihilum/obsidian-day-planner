@@ -4,7 +4,7 @@ import { STask } from "obsidian-dataview";
 
 import { timeFromStartRegExp } from "../regexp";
 import { DayPlannerSettings } from "../settings";
-import { Task } from "../types";
+import { Task, UnscheduledTask } from "../types";
 
 import { toTask, toUnscheduledTask } from "./dataview";
 
@@ -42,7 +42,7 @@ function calculateDuration(tasks: Task[], options: DurationOptions) {
   });
 }
 
-export function mapToTasksForDay(
+export function mapToTasksForDay( //TODO: rename
   day: Moment,
   tasksForDay: STask[],
   settings: DayPlannerSettings,
@@ -70,9 +70,9 @@ export function mapToTasksForDay(
     { parsed: [], errors: [] },
   );
 
-  tasksWithTime.sort((a, b) => a.startMinutes - b.startMinutes);
+  tasksWithTime.sort((a, b) => a.startMinutes - b.startMinutes); //TODO: remove this
 
-  const noTime = withoutTime
+  const noTime: UnscheduledTask[] = withoutTime
     // todo: move out
     .filter((sTask) => {
       if (!sTask.task) {
@@ -87,7 +87,10 @@ export function mapToTasksForDay(
     })
     .map((sTask: STask) => toUnscheduledTask(sTask, day));
 
-  const withTimeAndDuration = calculateDuration(tasksWithTime, settings);
+  const withTimeAndDuration: Task[] = calculateDuration(
+    tasksWithTime,
+    settings,
+  );
 
   return { withTime: withTimeAndDuration, noTime, errors };
 }

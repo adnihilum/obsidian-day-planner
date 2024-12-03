@@ -6,10 +6,12 @@ export enum EditMode {
   RESIZE = "RESIZE",
   RESIZE_AND_SHIFT_OTHERS = "RESIZE_AND_SHIFT_OTHERS",
   CREATE = "CREATE",
+  COPY = "COPY",
 }
 
 export interface EditOperation {
   task: Task;
   mode: EditMode;
   startCursorTimeDelta: number;
+  newId?: string;
 }

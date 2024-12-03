@@ -1,7 +1,8 @@
+import { TasksContainer } from "src/tasks-container";
+import * as TC from "src/tasks-container";
 import { get } from "svelte/store";
 
 import { defaultSettingsForTests } from "../../../../settings";
-import { Tasks } from "../../../../types";
 import { toMinutes } from "../../../../util/moment";
 import { baseTask } from "../../test-utils";
 
@@ -30,16 +31,11 @@ describe("resize", () => {
         startMinutes: toMinutes("02:00"),
       };
 
-      const tasks: Tasks = {
-        [dayKey]: {
-          withTime: [
-            { ...baseTask, id: "1", startMinutes: toMinutes("01:00") },
-            middleTask,
-            { ...baseTask, id: "3", startMinutes: toMinutes("03:00") },
-          ],
-          noTime: [],
-        },
-      };
+      const tasks: TasksContainer = TC.fromArray([
+        { ...baseTask, id: "1", startMinutes: toMinutes("01:00") },
+        middleTask,
+        { ...baseTask, id: "3", startMinutes: toMinutes("03:00") },
+      ]);
 
       const { editHandlers, moveCursorTo, displayedTasks } = setUp({
         tasks,

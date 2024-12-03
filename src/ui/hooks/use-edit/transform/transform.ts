@@ -1,20 +1,29 @@
+import * as M from "fp-ts/Map";
+import * as O from "fp-ts/Option";
+import * as Str from "fp-ts/string";
 import { produce } from "immer";
-import { partition } from "lodash/fp";
+import { TasksContainer } from "src/tasks-container";
+import * as TC from "src/tasks-container";
+import * as SU from "src/util/storage/storageUtils";
+import { derived, Readable, Writable } from "svelte/store";
 import { isNotVoid } from "typed-assert";
 
-import type { Task, Tasks } from "../../../../types";
-import { getDayKey, moveTaskToColumn } from "../../../../util/tasks-utils";
+import { snapMinutes } from "../../../../global-store/derived-settings";
+import { DayPlannerSettings } from "../../../../settings";
+import type { Task, UnscheduledTask } from "../../../../types";
+import { getDayKey } from "../../../../util/tasks-utils";
+import { SimpleEditOperation } from "../simple-edit-operation";
+import { TimelineKeeper } from "../timeline-keeper";
 import { EditMode, EditOperation } from "../types";
+import { TimeCursor, TimeCursorHistory } from "../use-time-cursor";
 
+import { Copy } from "./copy";
 import { Create } from "./create";
 import { Drag } from "./drag";
 import { DragAndShiftOthers } from "./drag-and-shift-others";
 import { Resize } from "./resize";
 import { ResizeAndShiftOthers } from "./resize-and-shift-others";
-import { DayPlannerSettings } from "../../../../settings";
-import { snapMinutes } from "../../../../global-store/derived-settings";
 import { Transformation } from "./transformation";
-import { TimeCursor, TimeCursorHistory } from "../use-time-cursor";
 
 const transformers: Record<EditMode, Transformation> = {
   [EditMode.DRAG]: new Drag(),
@@ -22,6 +31,7 @@ const transformers: Record<EditMode, Transformation> = {
   [EditMode.CREATE]: new Create(),
   [EditMode.RESIZE]: new Resize(),
   [EditMode.RESIZE_AND_SHIFT_OTHERS]: new ResizeAndShiftOthers(),
+  [EditMode.COPY]: new Copy(),
 };
 
 const multidayModes: Partial<EditMode[]> = [
@@ -44,71 +54,94 @@ function sortByStartMinutes(tasks: Task[]) {
 }
 
 export function transform(
-  baseline: Tasks,
-  timeCursorHistory: TimeCursorHistory,
+  baseline: TasksContainer,
+  adjustedTimeCursorHistory: TimeCursorHistory,
   operation: EditOperation,
-  settings: DayPlannerSettings,
-) {
-  function adjustMinutes(cursorMinutes: number): number {
-    return snapMinutes(
-      cursorMinutes - operation.startCursorTimeDelta,
-      settings,
-    );
-  }
-
-  const adjustedTimeCursorHistory = {
-    current: {
-      ...timeCursorHistory.current,
-      minutes: adjustMinutes(timeCursorHistory.current.minutes),
-    },
-    previous: {
-      ...timeCursorHistory.previous,
-      minutes: adjustMinutes(timeCursorHistory.previous.minutes),
-    },
-  };
-
-  const destDay = getDestDay(operation, timeCursorHistory.current);
+): SimpleEditOperation[] {
+  const destDay = getDestDay(operation, adjustedTimeCursorHistory.current);
   const destKey = getDayKey(destDay);
 
   const transformation = transformers[operation.mode];
   isNotVoid(transformation, `No transformer for operation: ${operation.mode}`);
 
-  if (
-    adjustedTimeCursorHistory.current &&
-    adjustedTimeCursorHistory.previous &&
-    adjustedTimeCursorHistory.current.day ===
-      adjustedTimeCursorHistory.previous.day &&
-    adjustedTimeCursorHistory.current.minutes ===
-      adjustedTimeCursorHistory.previous.minutes
-  ) {
-    return;
-  } else {
-    const withTaskInRightColumn = moveTaskToColumn(
-      destDay,
-      operation.task,
-      baseline,
-    );
+  const destTasks = Array.from(
+    TC.withTime(
+      O.getOrElse(() => new Set<Task | UnscheduledTask>())(
+        M.lookup(Str.Eq)(destKey)(baseline.byDate),
+      ),
+    ),
+  ).filter((t) => !t.calendar);
 
-    const destTasks = withTaskInRightColumn[destKey];
+  const withTimeSorted = sortByStartMinutes(destTasks);
+  const simpleOperations = transformation.transform(
+    withTimeSorted,
+    operation,
+    adjustedTimeCursorHistory.current,
+  );
 
-    const [readonly, editable] = partition(
-      (task) => task.calendar,
-      destTasks.withTime,
-    );
-    const withTimeSorted = sortByStartMinutes(editable);
-    const transformed = transformation.transform(
-      withTimeSorted,
-      operation.task,
-      adjustedTimeCursorHistory.current.minutes,
-    );
-    const merged = [...readonly, ...transformed];
+  return simpleOperations;
+}
 
-    return {
-      ...withTaskInRightColumn,
-      [destKey]: {
-        ...destTasks,
-        withTime: merged,
-      },
-    };
-  }
+export function useTransformation(
+  editOperation: Writable<EditOperation | undefined>,
+  timeCursorHistory: Readable<TimeCursorHistory>,
+  settings: Readable<DayPlannerSettings>,
+  timelineKeeper: TimelineKeeper,
+): void {
+  const editOperationWithAdjustedCursorHistory = derived(
+    [editOperation, timeCursorHistory, settings],
+    ([$editOperation, $timeCursorHistory, $settings]) => {
+      if (!$timeCursorHistory) return O.none;
+      if (!$editOperation) return O.none;
+
+      function adjustMinutes(cursorMinutes: number): number {
+        return snapMinutes(
+          cursorMinutes - $editOperation.startCursorTimeDelta,
+          $settings,
+        );
+      }
+
+      const adjustedTimeCursorHistory = {
+        current: {
+          ...$timeCursorHistory.current,
+          minutes: adjustMinutes($timeCursorHistory.current.minutes),
+        },
+        previous: {
+          ...$timeCursorHistory.previous,
+          minutes: adjustMinutes($timeCursorHistory.previous.minutes),
+        },
+      };
+      if (
+        adjustedTimeCursorHistory.current &&
+        adjustedTimeCursorHistory.previous &&
+        adjustedTimeCursorHistory.current.day ===
+          adjustedTimeCursorHistory.previous.day &&
+        adjustedTimeCursorHistory.current.minutes ===
+          adjustedTimeCursorHistory.previous.minutes // &&
+      ) {
+        return O.none;
+      }
+
+      return O.some<[EditOperation, TimeCursorHistory]>([
+        $editOperation,
+        adjustedTimeCursorHistory,
+      ]);
+    },
+    O.none,
+  );
+
+  SU.filter<O.Option<[EditOperation, TimeCursorHistory]>>(
+    (x) => O.isSome(x),
+    O.none,
+  )(editOperationWithAdjustedCursorHistory).subscribe(
+    O.map(([$editOperation, $adjustedTimeCursorHistory]) => {
+      const $baselineTasks = timelineKeeper.tasksAfterPendingEditOperations;
+      const simpleEditTasks = transform(
+        $baselineTasks,
+        $adjustedTimeCursorHistory,
+        $editOperation,
+      );
+      timelineKeeper.applyEdit(simpleEditTasks);
+    }),
+  );
 }

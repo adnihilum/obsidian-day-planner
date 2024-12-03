@@ -1,7 +1,8 @@
+import { TasksContainer } from "src/tasks-container";
+import * as TC from "src/tasks-container";
 import { get } from "svelte/store";
 
 import { defaultSettingsForTests } from "../../../../settings";
-import { Tasks } from "../../../../types";
 import { toMinutes } from "../../../../util/moment";
 import { baseTask } from "../../test-utils";
 
@@ -51,19 +52,11 @@ describe("moving tasks between containers", () => {
   });
 
   test("drag works between days", () => {
-    const tasks: Tasks = {
-      [dayKey]: {
-        withTime: [
-          baseTask,
-          { ...baseTask, id: "2", startMinutes: toMinutes("01:00") },
-        ],
-        noTime: [],
-      },
-      [nextDayKey]: {
-        withTime: [{ ...baseTask, id: "3", startMinutes: toMinutes("01:00") }],
-        noTime: [],
-      },
-    };
+    const tasks: TasksContainer = TC.fromArray([
+      baseTask,
+      { ...baseTask, id: "2", startMinutes: toMinutes("01:00") },
+      { ...baseTask, day: nextDay, id: "3", startMinutes: toMinutes("01:00") },
+    ]);
 
     const { editHandlers, moveCursorTo, displayedTasks } = setUp({
       tasks,
@@ -87,19 +80,11 @@ describe("moving tasks between containers", () => {
   });
 
   test("drag many works between days", () => {
-    const tasks: Tasks = {
-      [dayKey]: {
-        withTime: [
-          baseTask,
-          { ...baseTask, id: "2", startMinutes: toMinutes("01:00") },
-        ],
-        noTime: [],
-      },
-      [nextDayKey]: {
-        withTime: [{ ...baseTask, id: "3", startMinutes: toMinutes("01:00") }],
-        noTime: [],
-      },
-    };
+    const tasks: TasksContainer = TC.fromArray([
+      baseTask,
+      { ...baseTask, id: "2", startMinutes: toMinutes("01:00") },
+      { ...baseTask, day: nextDay, id: "3", startMinutes: toMinutes("01:00") },
+    ]);
 
     const { editHandlers, moveCursorTo, displayedTasks } = setUp({
       tasks,

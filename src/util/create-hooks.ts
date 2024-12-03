@@ -1,14 +1,8 @@
-import {
-  filter,
-  flatten,
-  flow,
-  groupBy,
-  isEmpty,
-  mapValues,
-  partition,
-} from "lodash/fp";
+import { filter, flatten, flow, isEmpty } from "lodash/fp";
 import { App } from "obsidian";
-import { derived, readable, writable, Writable } from "svelte/store";
+import { TasksContainer } from "src/tasks-container";
+import * as TC from "src/tasks-container";
+import { derived, Readable, readable, writable, Writable } from "svelte/store";
 
 import { icalRefreshIntervalMillis, reQueryAfterMillis } from "../constants";
 import { currentTime } from "../global-store/current-time";
@@ -16,7 +10,7 @@ import { DataviewFacade } from "../service/dataview-facade";
 import { ObsidianFacade } from "../service/obsidian-facade";
 import { PlanEditor } from "../service/plan-editor";
 import { DayPlannerSettings } from "../settings";
-import { Task, UnscheduledTask } from "../types";
+import { UnscheduledTask } from "../types";
 import { useDataviewChange } from "../ui/hooks/use-dataview-change";
 import { useDataviewLoaded } from "../ui/hooks/use-dataview-loaded";
 import { useDataviewTasks } from "../ui/hooks/use-dataview-tasks";
@@ -37,7 +31,7 @@ import { canHappenAfter, icalEventToTasks } from "./ical";
 import { getEarliestMoment } from "./moment";
 import { createBackgroundBatchScheduler } from "./scheduler";
 import { getUpdateTrigger } from "./store";
-import { getDayKey, getEmptyRecordsForDay, mergeTasks } from "./tasks-utils";
+import { getDayKey } from "./tasks-utils";
 import { useIcalEvents } from "./use-ical-events";
 
 interface CreateHooksProps {
@@ -145,22 +139,11 @@ export function createHooks({
     },
   );
 
-  const visibleDayToEventOccurences = derived(
+  const visibleDayToEventOccurences: Readable<TasksContainer> = derived(
     tasksFromEvents,
-    // todo: move out
-    flow(
-      filter(Boolean),
-      flatten,
-      groupBy((task: Task) => getDayKey(task.startTime)),
-      mapValues((tasks) => {
-        const [withTime, noTime]: [Task[], UnscheduledTask[]] = partition(
-          (task) => task.startMinutes !== undefined,
-          tasks,
-        );
-
-        return { withTime, noTime };
-      }),
-    ),
+    flow(filter(Boolean), flatten, (tasks: UnscheduledTask[]) => {
+      TC.fromArray(tasks);
+    }),
   );
 
   const taskUpdateTrigger = derived(
@@ -201,21 +184,23 @@ export function createHooks({
   const visibleTasks = derived(
     [visibleDataviewTasks, visibleDayToEventOccurences],
     ([$visibleDataviewTasks, $visibleDayToEventOccurences]) =>
-      mergeTasks($visibleDataviewTasks, $visibleDayToEventOccurences),
+      $visibleDataviewTasks.union(TC.orEmpty($visibleDayToEventOccurences)),
   );
 
   const tasksForToday = derived(
     [visibleTasks, currentTime],
     ([$visibleTasks, $currentTime]) => {
-      return $visibleTasks[getDayKey($currentTime)] || getEmptyRecordsForDay();
+      const tasksForDayRaw =
+        $visibleTasks.byDate.get(getDayKey($currentTime)) ?? new Set();
+      return TC.fromSet(tasksForDayRaw);
     },
   );
 
   const editContext = useEditContext({
     obsidianFacade,
-    onUpdate: planEditor.syncTasksWithFile,
     settings: settingsStore,
     visibleTasks,
+    planEditor,
   });
 
   const newlyStartedTasks = useNewlyStartedTasks({

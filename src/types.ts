@@ -2,13 +2,12 @@ import type { Moment } from "moment";
 import { Pos } from "obsidian";
 import { Readable, Writable } from "svelte/store";
 
-import type { getHorizontalPlacing } from "./overlap/horizontal-placing";
 import type { ObsidianFacade } from "./service/obsidian-facade";
 import { IcalConfig } from "./settings";
+import { TasksContainer } from "./tasks-container";
 import { ConfirmationModalProps } from "./ui/confirmation-modal";
 import { useEditContext } from "./ui/hooks/use-edit/use-edit-context";
 import { createShowPreview } from "./util/create-show-preview";
-import { getDiff, updateText } from "./util/tasks-utils";
 
 export interface TaskLocation {
   path: string;
@@ -16,13 +15,10 @@ export interface TaskLocation {
   position: Pos;
 }
 
-export type OnUpdateFn = (
-  taskUpdate: ReturnType<typeof updateText> & {
-    moved: { dayKey: string; task: Task }[];
-  },
-) => Promise<void | void[]>;
-
-export type Diff = ReturnType<typeof getDiff>;
+export interface HorizontalPlacing {
+  widthPercent: number;
+  xOffsetPercent: number;
+}
 
 export interface UnscheduledTask {
   /**
@@ -31,30 +27,28 @@ export interface UnscheduledTask {
   listTokens: string;
 
   // TODO: the distinction needs to be clearer
+
+  // TODO:  add source firstLineText field
+  // TODO:  add source restLines of text field
+  // TODO:  add displaydText - md text to rendr in the schedule panel
+
   firstLineText: string;
   displayedText: string;
 
   id: string;
   location?: TaskLocation;
-  placing?: ReturnType<typeof getHorizontalPlacing>;
-  isGhost?: boolean;
+  placing?: HorizontalPlacing;
+  isGhost?: boolean; //TODO: remove
   calendar?: IcalConfig;
   durationMinutes: number;
+
+  day: Moment;
 }
 
 export interface Task extends UnscheduledTask {
-  // todo: should be parsedStartTime to highlight that this doesn't change
   startTime: Moment;
   startMinutes: number;
 }
-
-export interface TasksForDay {
-  withTime: Task[];
-  noTime: UnscheduledTask[];
-}
-
-// todo: rename to DayToTasks
-export type Tasks = Record<string, TasksForDay>;
 
 export type RelationToNow = "past" | "present" | "future";
 
@@ -76,7 +70,7 @@ export interface ObsidianContext {
   dataviewLoaded: Readable<boolean>;
   renderMarkdown: RenderMarkdown;
   editContext: ReturnType<typeof useEditContext>;
-  visibleTasks: Readable<Tasks>;
+  visibleTasks: Readable<TasksContainer>;
   showReleaseNotes: () => void;
   showPreview: ReturnType<typeof createShowPreview>;
   isModPressed: Readable<boolean>;

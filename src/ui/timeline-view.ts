@@ -36,7 +36,9 @@ export default class TimelineView extends ItemView {
   async onOpen() {
     const contentEl = this.containerEl.children[1];
 
-    this.dateRange = this.dateRanges.trackRange([window.moment()]);
+    this.dateRange = this.dateRanges.trackRange([
+      window.moment().startOf("day"),
+    ]);
     this.registerEvent(
       this.app.workspace.on("active-leaf-change", (leaf) =>
         handleActiveLeafChange(leaf, this.dateRange),

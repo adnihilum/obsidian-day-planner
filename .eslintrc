@@ -36,6 +36,8 @@
     }
   ],
   "rules": {
+    "import/no-unresolved": 0, // Turn off "Unable to resolve path to module ..." error
+    "import/extensions": 0, // Turn off "Missing file extension for ..." error
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": [
       "error",
@@ -56,15 +58,6 @@
           "caseInsensitive": true
         },
         "newlines-between": "always"
-      }
-    ],
-    "import/no-unresolved": [
-      "error",
-      {
-        "ignore": [
-          "^obsidian$",
-          "^@testing-library/svelte$"
-        ]
       }
     ],
     "unused-imports/no-unused-imports": "error",

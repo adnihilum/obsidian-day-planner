@@ -1,13 +1,14 @@
 import { getDateFromPath } from "obsidian-daily-notes-interface";
+import { getId } from "src/util/id";
 import { get, Readable, Writable } from "svelte/store";
 
+import { snapMinutes } from "../../../global-store/derived-settings";
 import { ObsidianFacade } from "../../../service/obsidian-facade";
 import { DayPlannerSettings } from "../../../settings";
 import { Task, UnscheduledTask } from "../../../types";
-import { copy, createTask } from "../../../util/task-utils";
+import { createTask } from "../../../util/task-utils";
 
 import { EditMode, EditOperation } from "./types";
-import { snapMinutes } from "../../../global-store/derived-settings";
 import { TimeCursor } from "./use-time-cursor";
 
 export interface UseEditHandlersProps {
@@ -21,6 +22,7 @@ export interface UseEditHandlersProps {
 
 // todo: rename without `use`, there are no custom stores here
 export function createEditHandlers({
+  //TODO: replace with appropriate edit operation
   obsidianFacade,
   startEdit,
   confirmEdit,
@@ -57,6 +59,7 @@ export function createEditHandlers({
   }
 
   async function handleTaskMouseUp(task: UnscheduledTask) {
+    //TODO: remove?
     if (get(editOperation)) {
       return;
     }
@@ -84,29 +87,35 @@ export function createEditHandlers({
     }
   }
 
-  function handleGripMouseDown(task: Task) {
-    // todo: edit mode in settings is different from the enum. The names should also be different
-    const { copyOnDrag } = get(settings);
-    const taskOrCopy = copyOnDrag ? copy(task) : task;
+  function startCreateCopy(task: Task) {
+    startEdit({
+      task,
+      mode: EditMode.COPY,
+      startCursorTimeDelta: get(timeCursor).minutes - task.startMinutes,
+      newId: getId(),
+    });
+  }
 
-    startDragWithOptionalPush(taskOrCopy);
+  function handleGripMouseDown(task: Task) {
+    startDragWithOptionalPush(task);
   }
 
   function handleCopyMouseDown(task: Task) {
-    startDragWithOptionalPush(copy(task));
+    startCreateCopy(task);
   }
 
   function handleUnscheduledTaskGripMouseDown(task: UnscheduledTask) {
     const withAddedTime = {
       ...task,
       startMinutes: snapMinutes(get(timeCursor).minutes, get(settings)),
-      // todo: add a proper fix
+      //TODO:  review this: location should be accessed as less as possible
       startTime: task.location
         ? getDateFromPath(task.location.path, "day") || window.moment()
         : window.moment(),
     };
 
     startEdit({
+      //TODO:  fix this
       task: withAddedTime,
       mode: EditMode.DRAG,
       startCursorTimeDelta: 0,

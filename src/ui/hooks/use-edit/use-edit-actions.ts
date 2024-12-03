@@ -1,30 +1,19 @@
-import { get, Readable, Writable } from "svelte/store";
+import { get, Writable } from "svelte/store";
 
-import { OnUpdateFn, Tasks } from "../../../types";
-import { areValuesEmpty } from "../../../util/task-utils";
-import { getDiff, updateText } from "../../../util/tasks-utils";
-
+import { TimelineKeeper } from "./timeline-keeper";
 import { EditOperation } from "./types";
 
-interface UseEditActionsProps {
-  baselineTasks: Writable<Tasks>;
-  editOperation: Writable<EditOperation>;
-  displayedTasks: Readable<Tasks>;
-  onUpdate: OnUpdateFn;
-}
-
-export function useEditActions({
-  editOperation,
-  baselineTasks,
-  displayedTasks,
-  onUpdate,
-}: UseEditActionsProps) {
+export function useEditActions(
+  editOperation: Writable<EditOperation>,
+  timelineKeeper: TimelineKeeper,
+) {
   function startEdit(operation: EditOperation) {
     editOperation.set(operation);
   }
 
   function cancelEdit() {
     editOperation.set(undefined);
+    timelineKeeper.cancelEdit();
   }
 
   async function confirmEdit() {
@@ -32,26 +21,9 @@ export function useEditActions({
       return;
     }
 
-    const currentTasks = get(displayedTasks);
-
+    timelineKeeper.confirmEdit();
     editOperation.set(undefined);
-
-    // todo: diffing can be moved outside to separate concerns
-    //  but we need to know if something changed to not cause extra rewrites?
-    const diff = getDiff(get(baselineTasks), currentTasks);
-
-    if (areValuesEmpty(diff)) {
-      return;
-    }
-
-    baselineTasks.set(currentTasks);
-
-    await onUpdate({ ...updateText(diff), moved: diff.moved });
   }
 
-  return {
-    startEdit,
-    confirmEdit,
-    cancelEdit,
-  };
+  return { startEdit, cancelEdit, confirmEdit };
 }
