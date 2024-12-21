@@ -2,6 +2,8 @@ import { filter, flatten, flow, isEmpty } from "lodash/fp";
 import { App } from "obsidian";
 import { TasksContainer } from "src/tasks-container";
 import * as TC from "src/tasks-container";
+import * as SU from "src/util/storage/storageUtils";
+
 import { derived, Readable, readable, writable, Writable } from "svelte/store";
 
 import { icalRefreshIntervalMillis, reQueryAfterMillis } from "../constants";
@@ -104,6 +106,12 @@ export function createHooks({
   const dateRanges = useDateRanges();
   const visibleDays = useVisibleDays(dateRanges.ranges);
 
+  const currentDate = SU.removeDups(TC.eqMoment)(
+    derived(currentTime, ($currentTime) => $currentTime.clone().startOf("day")),
+  );
+  const todayTimeRangeTracker = dateRanges.trackRange([]);
+  currentDate.subscribe((today) => todayTimeRangeTracker.set([today]));
+
   // todo: improve naming
   const schedulerQueue = derived(
     [icalEvents, visibleDays],
@@ -187,11 +195,13 @@ export function createHooks({
       $visibleDataviewTasks.union(TC.orEmpty($visibleDayToEventOccurences)),
   );
 
+  // currentDate.subscribe((dd) => console.log(`currentDate = ${dd}`));
+
   const tasksForToday = derived(
-    [visibleTasks, currentTime],
-    ([$visibleTasks, $currentTime]) => {
+    [visibleTasks, currentDate],
+    ([$visibleTasks, $currentDate]) => {
       const tasksForDayRaw =
-        $visibleTasks.byDate.get(getDayKey($currentTime)) ?? new Set();
+        $visibleTasks.byDate.get(getDayKey($currentDate)) ?? new Set();
       return TC.fromSet(tasksForDayRaw);
     },
   );

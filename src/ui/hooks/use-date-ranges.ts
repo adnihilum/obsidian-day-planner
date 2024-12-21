@@ -11,9 +11,6 @@ export function useDateRanges() {
     const rangeKey = getId();
 
     ranges.update((previous) => ({ ...previous, [rangeKey]: range }));
-    ranges.subscribe((rs) =>
-      console.log(`ranges: \n${JSON.stringify(rs, null, 2)}`),
-    );
 
     function untrack() {
       ranges.update(omit([rangeKey]));
