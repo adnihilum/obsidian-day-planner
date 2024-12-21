@@ -11,6 +11,7 @@ export interface ColorOverride {
   text: string;
   color: string;
   darkModeColor: string;
+  invertedCondition: boolean;
 }
 
 export interface DayPlannerSettings {

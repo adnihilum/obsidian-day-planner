@@ -9,8 +9,10 @@ export function useColorOverride(task: UnscheduledTask) {
   const { isDarkMode } = getContext<ObsidianContext>(obsidianContext);
 
   return derived([settings, isDarkMode], ([$settings, $isDarkMode]) => {
-    const colorOverride = $settings.colorOverrides.find((override) =>
-      task.firstLineText.includes(override.text),
+    const colorOverride = $settings.colorOverrides.find(
+      (override) =>
+        !override.invertedCondition ==
+        task.firstLineText.includes(override.text),
     );
 
     if (colorOverride) {

@@ -3,7 +3,7 @@ import type { Writable } from "svelte/store";
 
 import { icons } from "../constants";
 import type DayPlanner from "../main";
-import type { DayPlannerSettings } from "../settings";
+import type { ColorOverride, DayPlannerSettings } from "../settings";
 
 export class DayPlannerSettingsTab extends PluginSettingTab {
   constructor(
@@ -419,6 +419,22 @@ export class DayPlannerSettingsTab extends PluginSettingTab {
     this.plugin.settings().colorOverrides.map((colorOverride, index) =>
       new Setting(containerEl)
         .setName(`Color ${index + 1}`)
+        .addToggle((el) =>
+          el
+            .setTooltip("Inverted condition")
+            .setValue(false)
+            .onChange((value: boolean) => {
+              this.settingsStore.update((previous) => ({
+                ...previous,
+                colorOverrides: previous.colorOverrides.map(
+                  (editedOverride, editedIndex) =>
+                    editedIndex === index
+                      ? { ...editedOverride, invertedCondition: value }
+                      : editedOverride,
+                ),
+              }));
+            }),
+        )
         .addColorPicker((el) =>
           // todo: replace with immer
           el.setValue(colorOverride.color).onChange((value: string) => {
@@ -482,10 +498,11 @@ export class DayPlannerSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl).addButton((el) =>
       el.setButtonText("Add color override").onClick(() => {
-        const newOverride = {
+        const newOverride: ColorOverride = {
           text: "#important",
           darkModeColor: "#6e3737",
           color: "#ffa1a1",
+          invertedCondition: false,
         };
 
         this.settingsStore.update((previous) => ({
