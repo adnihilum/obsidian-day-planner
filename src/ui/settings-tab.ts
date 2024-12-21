@@ -422,7 +422,7 @@ export class DayPlannerSettingsTab extends PluginSettingTab {
         .addToggle((el) =>
           el
             .setTooltip("Inverted condition")
-            .setValue(false)
+            .setValue(colorOverride.invertedCondition)
             .onChange((value: boolean) => {
               this.settingsStore.update((previous) => ({
                 ...previous,
