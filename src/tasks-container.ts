@@ -174,6 +174,11 @@ export const ordUTaskByContent: Ord.Ord<UTask> = Ord.fromCompare(
       : ordUnscheduledTaskByContent.compare(x, y),
 );
 
+export const ordUTaskById: Ord.Ord<UTask> = pipe(
+  String.Ord,
+  Ord.contramap((t: UnscheduledTask) => t.id),
+);
+
 export const eqMoment: Eq.Eq<Moment> = Eq.fromEquals((x: Moment, y: Moment) =>
   x.isSame(y),
 );
@@ -245,9 +250,10 @@ const eqLocation: Eq.Eq<TaskLocation> = Monoid.concatAll(Eq.getMonoid())([
   ),
 ]);
 
-export const eqTaskById: Eq.Eq<UnscheduledTask> = Eq.contramap(
-  (t: UnscheduledTask) => t.id,
-)(String.Eq);
+export const eqTaskById: Eq.Eq<UTask> = Eq.contramap((t: UTask) => t.id)(
+  String.Eq,
+);
+
 export const eqTaskByLocation: Eq.Eq<UnscheduledTask> = Eq.contramap(
   (t: UnscheduledTask) => O.fromNullable(t.location),
 )(O.getEq(eqLocation));
@@ -255,9 +261,11 @@ export const eqTaskByLocation: Eq.Eq<UnscheduledTask> = Eq.contramap(
 export const eqByContent: Eq.Eq<TasksContainer> = Eq.contramap(
   (ts: TasksContainer) => new Set(ts.allTasks.values()),
 )(S.getEq(eqUTaskByContent));
+
 export const eqByIds: Eq.Eq<TasksContainer> = Eq.contramap(
   (ts: TasksContainer) => new Set(ts.allTasks.keys()),
 )(S.getEq(String.Eq));
+
 export const eqByLocation: Eq.Eq<TasksContainer> = Eq.contramap(
   (ts: TasksContainer) => new Set(ts.allTasks.values()),
 )(S.getEq(eqTaskByLocation));
@@ -265,6 +273,7 @@ export const eqByLocation: Eq.Eq<TasksContainer> = Eq.contramap(
 export const eqByIdsAndContent: Eq.Eq<TasksContainer> = Monoid.concatAll(
   Eq.getMonoid(),
 )([eqByIds, eqByContent]);
+
 export const eqByContentAndLocation: Eq.Eq<TasksContainer> = Monoid.concatAll(
   Eq.getMonoid(),
 )([eqByContent, eqByLocation]);

@@ -1,6 +1,7 @@
 import * as A from "fp-ts/Array";
-import * as Eq from "fp-ts/Eq";
 import * as S from "fp-ts/Set";
+import * as Ord from "fp-ts/Ord";
+
 import { TasksContainer, UTask } from "src/tasks-container";
 import * as TC from "src/tasks-container";
 
@@ -13,9 +14,12 @@ export interface TasksComparrison {
 export function compareTasks(
   newTasks: TasksContainer,
   oldTasks: TasksContainer,
-  eq: Eq.Eq<TC.UTask>,
+  ordPriority: Ord.Ord<TC.UTask>,
 ): TasksComparrison {
-  const ord = TC.ordUTaskByContent;
+  const ord = Ord.getSemigroup<UTask>().concat(
+    ordPriority,
+    TC.ordUTaskByContent,
+  );
   const newTasksA = S.toArray(ord)(newTasks.allTasksSet());
   const oldTasksA = S.toArray(ord)(oldTasks.allTasksSet());
 
@@ -38,7 +42,7 @@ export function compareTasks(
     const newTask = newTasksA[i];
     const oldTask = oldTasksA[j];
 
-    if (eq.equals(newTask, oldTask)) {
+    if (ordPriority.equals(newTask, oldTask)) {
       bindTasksPair.push([newTask, oldTask]);
       i++;
       j++;

@@ -138,7 +138,7 @@ export class TimelineKeeper {
             compareTasks(
               seo.apply(this.initialTasks),
               this.initialTasks,
-              TC.eqTaskById,
+              TC.ordUTaskById,
             ),
           ),
           this.planEditor.syncTasksWithFile,
@@ -163,7 +163,7 @@ export class TimelineKeeper {
     const compOfCommitedTasks = compareTasks(
       newTasks,
       expectedTasks,
-      TC.eqUTaskByContent,
+      TC.ordUTaskByContent,
     );
 
     if (
@@ -188,7 +188,7 @@ export class TimelineKeeper {
 
       this.pendingSimpleEditOperations = pipe(
         A.tail(this.pendingSimpleEditOperations),
-        O.getOrElse(() => []),
+        O.getOrElse<SimpleEditOperation[]>(() => []),
       );
 
       const writtenNextSEO = this.writeNextPendingSimpleEditOperation();
@@ -204,7 +204,7 @@ export class TimelineKeeper {
   ////   edit operation ////
   //////////////////////////
 
-  private filterSEO(
+  private filteroutTrivialSEO(
     tasks: TasksContainer,
     seos: SimpleEditOperation[],
   ): SimpleEditOperation[] {
@@ -260,7 +260,7 @@ export class TimelineKeeper {
     const thereWerePendingEditOperations =
       this.pendingSimpleEditOperations.length > 0;
 
-    const filteredActiveSEOs = this.filterSEO(
+    const filteredActiveSEOs = this.filteroutTrivialSEO(
       this.tasksAfterPendingEditOperations,
       this.activeSimpleEditOperations,
     );
