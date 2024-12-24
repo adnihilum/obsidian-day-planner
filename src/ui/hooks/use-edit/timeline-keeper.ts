@@ -11,6 +11,33 @@ import { writable, Writable } from "svelte/store";
 import { SimpleEditOperation } from "./simple-edit-operation";
 import { compareTasks, TasksComparrison } from "./tasks-comparrison";
 
+class ResettableTimer {
+  timerId: O.Option<number>;
+  callback: () => void;
+  delay: number;
+
+  constructor(callback: () => void, delay: number) {
+    this.timerId = O.none;
+    this.callback = callback;
+    this.delay = delay;
+    this.reset = this.reset.bind(this);
+    this.cancel = this.cancel.bind(this);
+  }
+
+  reset(): void {
+    this.cancel();
+    const newTimerId = setTimeout(
+      this.callback,
+      this.delay,
+    ) as unknown as number;
+    this.timerId = O.some(newTimerId);
+  }
+
+  cancel(): void {
+    O.map<number, void>((timerId) => clearTimeout(timerId))(this.timerId);
+  }
+}
+
 export class TimelineKeeper {
   tasksFromDisk: TasksContainer;
 
@@ -27,6 +54,8 @@ export class TimelineKeeper {
   displayedTasksStore: Writable<TasksContainer>;
 
   planEditor: PlanEditor;
+
+  idleTimerId: ResettableTimer;
 
   constructor(planEditor: PlanEditor) {
     this.tasksFromDisk = new TasksContainer();
@@ -52,6 +81,11 @@ export class TimelineKeeper {
     this.displayedTasks = this.initialTasks;
 
     this.displayedTasksStore.set(this.initialTasks);
+    this.diskChangesWaitTimeout = this.diskChangesWaitTimeout.bind(this);
+    this.idleTimerId = new ResettableTimer(
+      this.diskChangesWaitTimeout,
+      1 * 60 * 1000,
+    );
   }
 
   private copyFileCoordinatesFromBinded(
@@ -65,6 +99,11 @@ export class TimelineKeeper {
       })),
       TC.fromArray,
     );
+  }
+
+  diskChangesWaitTimeout(): void {
+    console.log("timed out of waiting a new state from disk, continue!");
+    this.writeNextPendingSimpleEditOperation();
   }
 
   private createEditRequest(tasksComp: TasksComparrison): PlanEditorRequest {
@@ -130,9 +169,9 @@ export class TimelineKeeper {
   }
 
   private writeNextPendingSimpleEditOperation(): boolean {
-    return pipe(
+    const dataHasBeenWritten = pipe(
       A.head(this.pendingSimpleEditOperations),
-      O.map((seo: SimpleEditOperation) =>
+      O.map((seo: SimpleEditOperation) => {
         pipe(
           this.createEditRequest(
             compareTasks(
@@ -142,10 +181,19 @@ export class TimelineKeeper {
             ),
           ),
           this.planEditor.syncTasksWithFile,
-        ),
-      ),
+        );
+
+        this.idleTimerId.reset();
+        return {};
+      }),
       O.isSome,
     );
+
+    if (!dataHasBeenWritten) {
+      this.idleTimerId.cancel();
+    }
+
+    return dataHasBeenWritten;
   }
 
   changedTasksFromDisk(newTasks: TasksContainer): void {
@@ -160,17 +208,28 @@ export class TimelineKeeper {
       ),
     );
 
+    function somethingHasChanged(tc: TasksComparrison): boolean {
+      return tc.newTasksRem.length > 0 || tc.oldTasksRem.length > 0;
+    }
+
     const compOfCommitedTasks = compareTasks(
       newTasks,
       expectedTasks,
       TC.ordUTaskByContent,
     );
 
-    if (
-      compOfCommitedTasks.newTasksRem.length > 0 ||
-      compOfCommitedTasks.oldTasksRem.length > 0
-    ) {
-      console.log("unexpected data from the disk");
+    const compOfCurrentTasks = compareTasks(
+      newTasks,
+      this.initialTasks,
+      TC.ordUTaskByContent,
+    );
+
+    if (!somethingHasChanged(compOfCurrentTasks)) {
+      console.log("changes only in location inside files, continue!");
+      this.initialTasks =
+        this.copyFileCoordinatesFromBinded(compOfCommitedTasks);
+    } else if (somethingHasChanged(compOfCommitedTasks)) {
+      console.log("unexpected data from the disk!");
       console.log(
         `newTasksRem: \n${JSON.stringify(compOfCommitedTasks.newTasksRem, null, 2)}`,
       );
@@ -240,12 +299,19 @@ export class TimelineKeeper {
   }
 
   applyEdit(simpleEditOperations: SimpleEditOperation[]): void {
-    this.activeSimpleEditOperations = simpleEditOperations;
-    this.displayedTasks = A.reduce(
-      this.tasksAfterPendingEditOperations,
-      (accTasks, seo: SimpleEditOperation) => seo.apply(accTasks),
-    )(this.activeSimpleEditOperations);
-    this.displayedTasksStore.set(this.displayedTasks);
+    try {
+      this.activeSimpleEditOperations = simpleEditOperations;
+      this.displayedTasks = A.reduce(
+        this.tasksAfterPendingEditOperations,
+        (accTasks, seo: SimpleEditOperation) => seo.apply(accTasks),
+      )(this.activeSimpleEditOperations);
+      this.displayedTasksStore.set(this.displayedTasks);
+    } catch (error) {
+      console.error(`exception in applyEdit, rolling back`, error);
+      this.activeSimpleEditOperations = [];
+      this.displayedTasks = this.tasksAfterPendingEditOperations;
+      this.displayedTasksStore.set(this.displayedTasks);
+    }
   }
 
   cancelEdit(): void {
@@ -257,18 +323,32 @@ export class TimelineKeeper {
 
   confirmEdit(): void {
     console.log("confirmEdit!");
+
     const thereWerePendingEditOperations =
       this.pendingSimpleEditOperations.length > 0;
 
-    const filteredActiveSEOs = this.filteroutTrivialSEO(
-      this.tasksAfterPendingEditOperations,
-      this.activeSimpleEditOperations,
-    );
-    this.pendingSimpleEditOperations = A.concat(filteredActiveSEOs)(
-      this.pendingSimpleEditOperations,
-    );
-    this.activeSimpleEditOperations = [];
-    this.tasksAfterPendingEditOperations = this.displayedTasks;
+    const oldPendingSimpleEditOperations = this.pendingSimpleEditOperations;
+    const oldTasksAfterPendingEditOperations =
+      this.tasksAfterPendingEditOperations;
+
+    try {
+      const filteredActiveSEOs = this.filteroutTrivialSEO(
+        this.tasksAfterPendingEditOperations,
+        this.activeSimpleEditOperations,
+      );
+      this.pendingSimpleEditOperations = A.concat(filteredActiveSEOs)(
+        this.pendingSimpleEditOperations,
+      );
+      this.activeSimpleEditOperations = [];
+      this.tasksAfterPendingEditOperations = this.displayedTasks;
+    } catch (error) {
+      console.error("exception in confirmEdit, rolling back!", error);
+      this.pendingSimpleEditOperations = oldPendingSimpleEditOperations;
+      this.tasksAfterPendingEditOperations = oldTasksAfterPendingEditOperations;
+      this.activeSimpleEditOperations = [];
+      this.displayedTasks = this.tasksAfterPendingEditOperations;
+      this.displayedTasksStore.set(this.displayedTasks);
+    }
 
     const thereArePendingEditOperations =
       this.pendingSimpleEditOperations.length > 0;
