@@ -3,14 +3,13 @@
 
   import { obsidianContext } from "../../constants";
   import type { ObsidianContext } from "../../types";
-  import { styledCursor } from "../actions/styled-cursor";
 
   const {
-    editContext: { cancelEdit, cursor },
+    editContext: { cancelEdit },
   } = getContext<ObsidianContext>(obsidianContext);
 </script>
 
 <!--TODO: this should be attached only once for all views-->
 <svelte:window on:blur={cancelEdit} />
-<svelte:body use:styledCursor={$cursor.bodyCursor} />
+<svelte:body />
 <svelte:document on:mouseup={cancelEdit} />

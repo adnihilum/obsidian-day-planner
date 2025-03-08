@@ -1,10 +1,8 @@
 <script lang="ts">
   import { Scissors } from "lucide-svelte";
-
-  export let cursor: string;
 </script>
 
-<div style:cursor class="clickable-icon" on:mousedown|stopPropagation>
+<div class="clickable-icon" on:mousedown|stopPropagation>
   <Scissors class="svg-icon" />
 </div>
 

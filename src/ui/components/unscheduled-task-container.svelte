@@ -24,7 +24,6 @@
     editContext: { displayedTasks, editHandlers },
   } = getContext<ObsidianContext>(obsidianContext);
   const {
-    cursor,
     handleTaskMouseUp,
     handleTaskDblClick,
     handleUnscheduledTaskGripMouseDown,
@@ -54,7 +53,6 @@
   <div class="unscheduled-task-container">
     {#each $displayedTasksWithNoTime as task}
       <UnscheduledTimeBlock
-        gripCursor={$cursor.gripCursor}
         onGripMouseDown={() => handleUnscheduledTaskGripMouseDown(task)}
         {task}
         on:mouseup={() => handleTaskMouseUp(task)}

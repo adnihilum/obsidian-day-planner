@@ -8,7 +8,6 @@
   import TimeBlockPadding from "./time-block-padding.svelte";
 
   export let task: UnscheduledTask;
-  export let gripCursor: string;
   export let onGripMouseDown: () => void;
 </script>
 
@@ -16,7 +15,7 @@
   <TimeBlockBase {task} on:mouseup on:dblclick>
     <MarkdownBlockContent {task}>
       <RenderedMarkdown {task} />
-      <Grip cursor={gripCursor} on:mousedown={onGripMouseDown} />
+      <Grip on:mousedown={onGripMouseDown} />
     </MarkdownBlockContent>
   </TimeBlockBase>
 </TimeBlockPadding>

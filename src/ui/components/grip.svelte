@@ -1,10 +1,8 @@
 <script lang="ts">
   import { GripVertical } from "lucide-svelte";
-
-  export let cursor: string;
 </script>
 
-<div style:cursor class="clickable-icon" on:mousedown|stopPropagation>
+<div class="clickable-icon" on:mousedown|stopPropagation>
   <GripVertical class="svg-icon" />
 </div>
 

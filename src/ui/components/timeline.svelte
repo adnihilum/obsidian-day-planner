@@ -15,7 +15,6 @@
   import { ObsidianContext } from "../../types";
   import { isToday } from "../../util/moment";
   import { getRenderKey } from "../../util/task-utils";
-  import { styledCursor } from "../actions/styled-cursor";
 
   import Column from "./column.svelte";
   import LocalTimeBlock from "./local-time-block.svelte";
@@ -44,7 +43,6 @@
     handleCopyMouseDown,
     handleMouseEnter,
     pointerOffsetY,
-    cursor,
   } = editHandlers;
 
   $: dayStore.set(day);
@@ -72,7 +70,7 @@
 </script>
 
 <svelte:window on:blur={cancelEdit} />
-<svelte:body use:styledCursor={$cursor.bodyCursor} />
+<svelte:body />
 <svelte:document on:mouseup={cancelEdit} />
 
 <Column visibleHours={getVisibleHours($settings)}>
@@ -91,7 +89,6 @@
         <RemoteTimeBlock {task} />
       {:else}
         <LocalTimeBlock
-          gripCursor={$cursor.gripCursor}
           isResizeHandleVisible={!$editOperation}
           onCopyMouseDown={() => handleCopyMouseDown(task)}
           onGripMouseDown={() => handleGripMouseDown(task)}

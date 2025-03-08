@@ -9,7 +9,6 @@
   import ScheduledTimeBlock from "./scheduled-time-block.svelte";
 
   export let task: Task;
-  export let gripCursor: string;
   export let onCopyMouseDown: (event: MouseEvent) => void;
   export let onGripMouseDown: (event: MouseEvent) => void;
   export let isResizeHandleVisible: boolean;
@@ -19,8 +18,8 @@
 <ScheduledTimeBlock {task} on:mouseup on:dblclick>
   <MarkdownBlockContent {task}>
     <RenderedMarkdown {task} />
-    <Copy cursor={gripCursor} on:mousedown={onCopyMouseDown} />
-    <Grip cursor={gripCursor} on:mousedown={onGripMouseDown} />
+    <Copy on:mousedown={onCopyMouseDown} />
+    <Grip on:mousedown={onGripMouseDown} />
     <ResizeHandle
       visible={isResizeHandleVisible}
       on:mousedown={onResizerMouseDown}
